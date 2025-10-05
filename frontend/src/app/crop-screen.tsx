@@ -1,6 +1,6 @@
 import { IconArrowBack } from '@tabler/icons-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -11,25 +11,31 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// Importação CORRETA do componente ImageEditor
 import { ImageEditor } from 'expo-dynamic-image-crop';
+import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
 
-// Importações removidas: FileSystem, useSharedValue, useAnimatedStyle, Gesture, ImageManipulator, etc.
-// A biblioteca de crop cuida disso internamente.
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function CropScreen() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
+  const [isLoading, setIsLoading] = useState(true); // Estado de Carregamento/Inicialização
 
-  // --- Validação Inicial ---
-  if (!uri) {
-    Alert.alert('Erro', 'Nenhuma imagem recebida para edição.');
-    router.replace('/');
-    return <View />;
+      useEffect(() => {
+        if (uri) {
+            // Um pequeno delay pode ajudar o React a garantir que a View está pronta
+            const timer = setTimeout(() => {
+                setIsLoading(false);
+            }, 50); // Delay mínimo
+            return () => clearTimeout(timer);
+        }
+    }, [uri]);
+
+  if (!uri || isLoading) {
+            return <View style={styles.container}><Text style={{color: 'white'}}>Carregando imagem...</Text></View>;
+
   }
 
-  // --- Handlers de Edição ---
 
   // Chamado quando o usuário clica em 'Confirmar' no editor
   const handleEditingComplete = (data: { uri: string; width: number; height: number }) => {
@@ -43,11 +49,24 @@ export default function CropScreen() {
   };
 
   // Chamado quando o usuário cancela a edição
-  const handleCancel = () => {
+  const handleCancel = async () => {
+     try {
+        if (uri) {
+           await FileSystem.deleteAsync(uri, { idempotent: true }); 
+        }
+    } catch(e) {
+      Alert.alert(
+        'Atenção',
+        'Houve um problema na remoção de cache da foto.',
+        [{ text: 'OK', onPress: () => router.back() }],
+        { cancelable: false }
+      );
+    }
+    
     Alert.alert(
       'Atenção',
       'Edição cancelada. Refaça a captura.',
-      [{ text: 'OK', onPress: () => router.replace('/') }],
+      [{ text: 'OK', onPress: () => router.back() }],
       { cancelable: false }
     );
   };
@@ -57,6 +76,7 @@ export default function CropScreen() {
     <View style={styles.container}>
       {/* 1. Componente ImageEditor */}
       <ImageEditor
+      key={uri}
         isVisible={true}
         imageUri={uri} // URI da foto vinda da CameraView
         dynamicCrop={true}

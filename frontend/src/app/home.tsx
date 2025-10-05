@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 export default function Home() {
   return (
-    <View className="flex-1 gap-12  px-10 py-28">
+    <View className="flex-1 gap-12 px-10 py-28">
       <View className="flex items-center justify-center gap-4">
         <Text className="font-regular text-4xl">Qual tipo de Análise deseja fazer?</Text>
         <Text className="font-regular text-lg">

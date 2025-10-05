@@ -1,7 +1,7 @@
 import { Button } from '@/components/Button';
 import { SingleAnalysisSteps } from '@/components/SingleAnalysisSteps';
 import { colors } from '@/styles/colors';
-import { IconArrowBack, IconCamera, IconPhoto } from '@tabler/icons-react-native'; // Mudei IconPlus para IconPhoto, mais intuitivo
+import { IconArrowBack, IconCamera } from '@tabler/icons-react-native'; // Mudei IconPlus para IconPhoto, mais intuitivo
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
 import * as MediaLibrary from 'expo-media-library'; // Certifique-se de que está importado
@@ -9,7 +9,6 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
 
-const TEMP_FILE_NAME = 'cropped_photo.jpg'; // Nome fixo para o arquivo
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -35,7 +34,6 @@ export default function Index() {
 
   const takePictureHandler = async () => {
     if (cameraRef.current) {
-      // CORREÇÃO: Usamos takePicture() na nova API
       const photo = await cameraRef.current.takePictureAsync({
         quality: 1,
       });
@@ -43,6 +41,7 @@ export default function Index() {
       if (photo) {
         setIsCapturing(false);
         try {
+          const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`
           const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
 
           await FileSystem.deleteAsync(newUri, { idempotent: true });
@@ -52,7 +51,7 @@ export default function Index() {
           });
 
           // 3. Navega para a tela de crop com o NOVO URI (seguro)
-          router.push({ pathname: '/crop-screen', params: { uri: newUri } });
+          router.navigate({ pathname: '/crop-screen', params: { uri: newUri } });
         } catch (error) {
           console.error('Erro ao mover/salvar arquivo:', error);
           Alert.alert('Erro', 'Não foi possível preparar a foto para edição. Tente novamente.');
@@ -85,25 +84,24 @@ export default function Index() {
   // --- RENDERIZAÇÃO DA CÂMERA ---
   if (isCapturing) {
     return (
-      <View style={{ flex: 1, backgroundColor: 'black' }}>
+      <View className='flex-1 justify-end py-20 bg-black'>
         <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
-          <View className="flex-1 justify-end bg-transparent p-6">
+          <View className="flex-1 justify-end px-10 py-20">
             <TouchableOpacity
               onPress={() => setIsCapturing(false)}
-              style={{ position: 'absolute', left: 20, top: 50, zIndex: 10 }}
+              style={{ position: 'absolute', left: 20, top: 20, zIndex: 10 }}
               className="rounded-full bg-gray-900/50 p-2">
               <IconArrowBack size={30} color="white" />
             </TouchableOpacity>
-
-            <View className="absolute bottom-10 w-full flex-row items-center justify-center">
-              <TouchableOpacity
-                onPress={takePictureHandler}
-                className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/30">
-                <IconPhoto size={30} color="white" />
-              </TouchableOpacity>
-            </View>
           </View>
         </CameraView>
+        <View className=" mt-6 w-full flex-row items-center justify-center">
+          <TouchableOpacity
+            onPress={takePictureHandler}
+            className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/30">
+            <IconCamera size={30} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }

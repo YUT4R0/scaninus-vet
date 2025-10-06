@@ -1,3 +1,4 @@
+import { fs } from '@/utils/responsive';
 import { Text, View } from 'react-native';
 import { Step } from './Step';
 
@@ -11,15 +12,19 @@ export default function Wellcome() {
   ];
 
   return (
-    <View className="flex flex-1 flex-col justify-evenly">
+    <View className="flex-1 flex-col justify-between gap-10">
       {/* HEADER */}
-      <View className="flex flex-col items-center justify-center gap-3">
-        <Text className="text-5xl font-extrabold">ScaninusVet 🐶</Text>
-        <Text className="font-semiBold text-xl">Cálculos Nutricionais Instantâneos</Text>
+      <View className="flex-col items-center justify-center gap-2">
+        <Text style={{ fontSize: fs(30) }} className="font-extrabold">
+          ScaninusVet 🐶
+        </Text>
+        <Text style={{ fontSize: fs(15) }} className="text-center font-semiBold">
+          Cálculos Nutricionais Instantâneos
+        </Text>
       </View>
 
       {/* BODY */}
-      <View className="flex flex-col gap-4">
+      <View className="flex-1 flex-col gap-4">
         <Step
           title="Cansado de Rótulos confusos?"
           p1="ScaninusVet simplifica a complexa análise nutricional de rações caninas. Em segundos,

@@ -1,3 +1,4 @@
+import { fs } from '@/utils/responsive';
 import { Text, View } from 'react-native';
 
 type Props = {
@@ -10,18 +11,26 @@ type Props = {
 export function Step({ p1, title, list, p2 }: Props) {
   return (
     <View className="flex flex-col gap-1">
-      <Text className="text-xl font-semibold">{title}</Text>
-      <Text className="font-regular text-base">{p1}</Text>
+      <Text style={{ fontSize: fs(14) }} className="font-semibold">
+        {title}
+      </Text>
+      <Text style={{ fontSize: fs(11) }} className="font-regular leading-5">
+        {p1}
+      </Text>
       {list && list.length > 0 && (
-        <View className="my-1 flex flex-col">
+        <View className="my-0.5 flex flex-col">
           {list.map((item, i) => (
-            <Text key={i} className="font-regular text-lg">
+            <Text key={i} className="font-regular" style={{ fontSize: fs(13) }}>
               - {item};
             </Text>
           ))}
         </View>
       )}
-      {p2 && <Text className="font-regular text-base">{p2}</Text>}
+      {p2 && (
+        <Text style={{ fontSize: fs(11) }} className="font-regular leading-5">
+          {p2}
+        </Text>
+      )}
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import { colors } from '@/styles/colors';
+import { fs } from '@/utils/responsive';
 import { IconProps as TablerIconProps } from '@tabler/icons-react-native';
 import React from 'react';
 import {
@@ -27,7 +28,11 @@ function Button({ children, style, isLoading = false, ...rest }: ButtonProps) {
 }
 
 function Title({ children }: TextProps) {
-  return <Text className="font-semiBold text-base text-gray-100">{children}</Text>;
+  return (
+    <Text style={{ fontSize: fs(12) }} className="font-semiBold leading-snug text-gray-100">
+      {children}
+    </Text>
+  );
 }
 
 type IconProps = {

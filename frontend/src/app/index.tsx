@@ -6,9 +6,11 @@ import { View } from 'react-native';
 
 export default function Index() {
   return (
-    <View className="h-full flex-1 px-10 py-16">
-      <Wellcome />
-      <View className="mb-10">
+    <View className="flex-1 gap-5 px-10 py-16">
+      <View className="flex h-[85%]">
+        <Wellcome />
+      </View>
+      <View className="flex h-[15%] w-full justify-center">
         <Button onPress={() => router.navigate('/home')}>
           <Button.Title>Começar</Button.Title>
         </Button>

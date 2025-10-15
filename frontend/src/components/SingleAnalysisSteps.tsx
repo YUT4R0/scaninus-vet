@@ -3,7 +3,7 @@ import { Step } from './Step';
 
 export function SingleAnalysisSteps() {
   return (
-    <View className="flex flex-col gap-6">
+    <View className="flex flex-col gap-5">
       <Step
         title="1 - Capture a Área de Garantia"
         p1={`Posicione a câmera sobre a seção "Níveis de Garantia" da embalagem da ração. Certifique-se de ter boa luz e que o texto não esteja com reflexos ou muito embaçado.`}

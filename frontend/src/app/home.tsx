@@ -1,13 +1,16 @@
 import { AnalysisOption } from '@/components/AnalysisOption';
+import { fs } from '@/utils/responsive';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 
 export default function Home() {
   return (
-    <View className="flex-1 gap-12 px-10 py-28">
+    <View className="flex-1 gap-12 px-10 py-16">
       <View className="flex items-center justify-center gap-4">
-        <Text className="font-regular text-4xl">Qual tipo de Análise deseja fazer?</Text>
-        <Text className="font-regular text-lg">
+        <Text style={{ fontSize: fs(25) }} className="font-regular">
+          Qual tipo de Análise deseja fazer?
+        </Text>
+        <Text style={{ fontSize: fs(12) }} className="font-regular leading-5">
           Antes de começar, certifique-se de habilidar o uso da câmera durante o uso da aplicação.
         </Text>
       </View>

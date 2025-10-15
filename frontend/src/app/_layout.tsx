@@ -10,6 +10,8 @@ import {
 import { Stack } from 'expo-router';
 import React from 'react';
 
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import '../../global.css';
 
 export default function Layot() {
@@ -23,11 +25,18 @@ export default function Layot() {
   if (!fontsLoaded) return <Loading />;
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.gray[100] },
-      }}
-    />
+    <SafeAreaProvider>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: colors.gray[100] }}
+        edges={['top', 'bottom']}>
+        <StatusBar barStyle={'default'} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.gray[100] },
+          }}
+        />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

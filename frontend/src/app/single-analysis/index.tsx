@@ -1,6 +1,7 @@
 import { Button } from '@/components/Button';
 import { SingleAnalysisSteps } from '@/components/SingleAnalysisSteps';
 import { colors } from '@/styles/colors';
+import { fs } from '@/utils/responsive';
 import { IconArrowBack, IconCamera } from '@tabler/icons-react-native'; // Mudei IconPlus para IconPhoto, mais intuitivo
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
@@ -8,7 +9,6 @@ import * as MediaLibrary from 'expo-media-library'; // Certifique-se de que est�
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Text, TouchableOpacity, View } from 'react-native';
-
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -41,7 +41,7 @@ export default function Index() {
       if (photo) {
         setIsCapturing(false);
         try {
-          const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`
+          const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`;
           const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
 
           await FileSystem.deleteAsync(newUri, { idempotent: true });
@@ -68,9 +68,11 @@ export default function Index() {
   if (!cameraPermission.granted) {
     // ... (código para solicitar permissão) ...
     return (
-      <View className="flex flex-1 flex-col justify-evenly bg-white p-10">
-        <Text className="text-center font-regular text-4xl">Permissão Necessária</Text>
-        <Text className="mt-4 text-center font-regular text-lg">
+      <View className="flex flex-1 flex-col justify-center gap-6 p-10">
+        <Text style={{ fontSize: fs(20) }} className="text-center font-regular">
+          Permissão Necessária
+        </Text>
+        <Text style={{ fontSize: fs(12) }} className="text-center font-regular leading-5">
           Acesso à Câmera é obrigatório para escanear rótulos.
         </Text>
         <Button style={{ backgroundColor: colors.blue.base }} onPress={() => startCapture()}>
@@ -84,7 +86,7 @@ export default function Index() {
   // --- RENDERIZAÇÃO DA CÂMERA ---
   if (isCapturing) {
     return (
-      <View className='flex-1 justify-end py-20 bg-black'>
+      <View className="flex-1 justify-end bg-black">
         <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
           <View className="flex-1 justify-end px-10 py-20">
             <TouchableOpacity
@@ -94,27 +96,29 @@ export default function Index() {
               <IconArrowBack size={30} color="white" />
             </TouchableOpacity>
           </View>
+          <View className="mb-10 w-full flex-row items-center justify-center">
+            <TouchableOpacity
+              onPress={takePictureHandler}
+              className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/30">
+              <IconCamera size={30} color="white" />
+            </TouchableOpacity>
+          </View>
         </CameraView>
-        <View className=" mt-6 w-full flex-row items-center justify-center">
-          <TouchableOpacity
-            onPress={takePictureHandler}
-            className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/30">
-            <IconCamera size={30} color="white" />
-          </TouchableOpacity>
-        </View>
       </View>
     );
   }
 
   // --- RENDERIZAÇÃO DA TELA DE INSTRUÇÕES ---
   return (
-    <View className="flex flex-1 flex-col justify-evenly bg-white p-10">
-      <Text className="text-center font-regular text-4xl">Siga as Instruções</Text>
+    <View className="flex flex-1 flex-col justify-evenly p-10">
+      <Text style={{ fontSize: fs(25) }} className="text-center font-regular">
+        Siga as Instruções
+      </Text>
       <SingleAnalysisSteps />
-      <View className="mb-10">
+      <View className="mt-5">
         <Button style={{ backgroundColor: colors.blue.base }} onPress={startCapture}>
-          <Button.Title>Iniciar Captura</Button.Title>
           <Button.Icon icon={IconCamera} />
+          <Button.Title>Iniciar Captura</Button.Title>
         </Button>
       </View>
     </View>

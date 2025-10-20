@@ -1,6 +1,7 @@
 from werkzeug.datastructures import FileStorage
 from flask import current_app
 from app.config import Config
+from app.utils import logger
 import requests
 
 
@@ -20,22 +21,25 @@ class OCRService:
     def extract_text(self, file: FileStorage):
         payload = {
             "apikey": self._api_key,
-            "language": "por",  # Português
-            "isOverlayRequired": "true",  # Para obter metadados de posição do texto (útil, mas opcional)
-            "isTable": "true",  # Sugere otimização para detecção de tabelas
+            "language": "por",
+            "isOverlayRequired": "false",
+            "isTable": "true",
+            "OCREngine": "2",
+            "detectOrientation": "true",
         }
 
         try:
             # Lê o conteúdo binário do arquivo em memória
             image_bytes = file.read()
-            files = {"file": (file.name, image_bytes, file.mimetype)}
+            files = {"file": (file.filename, image_bytes, file.mimetype)}
 
             response = requests.post(
-                url=self._url, data=payload, files=files, timeout=60
+                url=self._url, data=payload, files=files, timeout=30000
             )
-            response.raise_for_status()
+            logger.info(f"OCR.space Status: {response.status_code}")
 
             data = response.json()
+            logger.info(f"OCR.spaece Response: {data}")
 
             # --- Análise e Retorno do Texto ---
 

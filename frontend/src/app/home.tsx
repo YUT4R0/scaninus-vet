@@ -7,10 +7,13 @@ export default function Home() {
   return (
     <View className="flex-1 gap-12 px-10 py-16">
       <View className="flex items-center justify-center gap-4">
-        <Text style={{ fontSize: fs(25) }} className="font-regular">
+        <Text allowFontScaling={false} style={{ fontSize: fs(28) }} className="font-regular">
           Qual tipo de Análise deseja fazer?
         </Text>
-        <Text style={{ fontSize: fs(12) }} className="font-regular leading-5">
+        <Text
+          allowFontScaling={false}
+          style={{ fontSize: fs(14) }}
+          className="font-regular leading-6">
           Antes de começar, certifique-se de habilidar o uso da câmera durante o uso da aplicação.
         </Text>
       </View>

@@ -29,7 +29,10 @@ function Button({ children, style, isLoading = false, ...rest }: ButtonProps) {
 
 function Title({ children }: TextProps) {
   return (
-    <Text style={{ fontSize: fs(12) }} className="font-semiBold leading-snug text-gray-100">
+    <Text
+      allowFontScaling={false}
+      style={{ fontSize: fs(12) }}
+      className="font-semiBold leading-snug text-gray-100">
       {children}
     </Text>
   );

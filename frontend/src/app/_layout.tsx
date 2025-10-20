@@ -10,7 +10,6 @@ import {
 import { Stack } from 'expo-router';
 import React from 'react';
 
-import { StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import '../../global.css';
 
@@ -29,13 +28,40 @@ export default function Layot() {
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.gray[100] }}
         edges={['top', 'bottom']}>
-        <StatusBar barStyle={'default'} />
         <Stack
           screenOptions={{
-            headerShown: false,
+            headerShown: true,
             contentStyle: { backgroundColor: colors.gray[100] },
-          }}
-        />
+            headerStyle: { backgroundColor: colors.gray[100] },
+          }}>
+          <Stack.Screen name="index" options={{ headerShown: false, title: 'Bem-vindo' }} />
+          <Stack.Screen name="home" options={{ headerShown: false, title: 'Home' }} />
+
+          <Stack.Screen
+            name="single-analysis/index"
+            options={{
+              title: 'Análise Simples',
+              headerTitleStyle: {
+                fontSize: 18,
+              },
+              headerTitleAlign: 'center',
+            }}
+          />
+          <Stack.Screen
+            name="single-analysis/agent-response"
+            options={{
+              title: 'Resultado da Análise',
+              headerTitleAlign: 'center',
+              headerTitleStyle: {
+                fontSize: 18,
+              },
+            }}
+          />
+          <Stack.Screen
+            name="single-analysis/confirmation"
+            options={{ title: '', headerShown: false }}
+          />
+        </Stack>
       </SafeAreaView>
     </SafeAreaProvider>
   );

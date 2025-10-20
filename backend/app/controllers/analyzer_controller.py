@@ -12,38 +12,30 @@ class AnalyzerController:
     """
 
     def __init__(self):
-        self._ocr_service = OCRService()
-        self._agent_service = AgentService()
         self._analyzer_view = AnalyzerView()
 
-    def _extract_variables(self, raw_data):
-        # iterate specific json
-        pass
-
     def _validate_data(self, file: FileStorage):
+        if not file:
+            return jsonify({"error": "Erro desconhecido ('image' não fornecido)."}), 500
         if file.filename == "":
             return jsonify({"error": "Nenhum arquivo selecionado."}), 400
-
-        if file:
-            if not file.mimetype or not file.mimetype.startswith("image"):
-                return (
-                    jsonify(
-                        {"error": "Tipo de arquivo não suportado. Esperado: imagem."}
-                    ),
-                    400,
-                )
-            return
-
-        return jsonify({"error": "Erro desconhecido."}), 500
+        if not file.mimetype or not file.mimetype.startswith("image"):
+            return (
+                jsonify({"error": "Tipo de arquivo não suportado. Esperado: imagem."}),
+                400,
+            )
 
     def generate_single_analysis(self, file: FileStorage):
         self._validate_data(file=file)
+        ocr_service = OCRService()
+        agent_service = AgentService()
 
         try:
-            raw_text_data = self._ocr_service.extract_text(file=file)
+            logger.info(f"====> IMAGEM RECEBIDA: {file.filename}")
+            raw_text_data = ocr_service.extract_text(file=file)
             logger.info(f"====> RAW TEXT RETURNED FROM OCR-SERVICE: {raw_text_data}")
-            target_variables = self._extract_variables(raw_text_data)
-            response_text = self._agent_service.single_analyse(data=target_variables)
-            return self._analyzer_view.sigle_analysis_output(text=response_text)
+            response_text = agent_service.single_analyse(data=raw_text_data)
+            logger.info(f"====> RESPONSE FROM MODEL: {response_text}")
+            return self._analyzer_view.sigle_analysis_output(response_text)
         except Exception as e:
             return jsonify({"error": f"Erro no processamento: {str(e)}"}), 500

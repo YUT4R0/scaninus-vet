@@ -1,5 +1,8 @@
-from flask import jsonify
+import json
 import re
+from flask import jsonify
+
+from ..utils import logger
 
 
 class AnalyzerView:
@@ -7,26 +10,18 @@ class AnalyzerView:
         pass
 
     def sigle_analysis_output(self, text: str):
-        match = re.search(r"\[STATUS=(.*?)\]", text)
-        status = "ok"
-        if match:
-            status = match.group(1)
-
-        if status == "ok":
-            data = text.replace("[STATUS=ok]", "")
-            body = {
-                "success": True,
-                "message": "Analise feita com sucesso!",
-                "data": data,
-            }
-            response = jsonify(body), 200
-            return response
-        elif status == "bad":
-            data = text.replace("[STATUS=bad]", "")
-            body = {
-                "success": True,
-                "message": "Houve alguns erros na analise!",
-                "data": data,
-            }
-            response = jsonify(body), 200
-            return response
+        try:
+            json_match = re.search(r"```json\s*(\{.*\})\s*```", text, re.DOTALL)
+            if not json_match:
+                # Se não encontrar o bloco JSON, algo deu errado
+                raise ValueError("LLM não retornou o JSON no formato esperado.")
+            json_string_clean = json_match.group(1).strip()
+            response_data_dict = json.loads(json_string_clean)
+            logger.info(f"====> SANITIZED INFO: {response_data_dict}")
+            return jsonify(response_data_dict), 200
+        except json.JSONDecodeError:
+            logger.error("Erro ao fazer parse do JSON retornado pelo modelo.")
+            return (
+                jsonify({"error": "Erro interno: Formato de resposta da IA inválido."}),
+                500,
+            )

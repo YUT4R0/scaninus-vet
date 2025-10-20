@@ -2,124 +2,126 @@ import { Button } from '@/components/Button';
 import { SingleAnalysisSteps } from '@/components/SingleAnalysisSteps';
 import { colors } from '@/styles/colors';
 import { fs } from '@/utils/responsive';
-import { IconArrowBack, IconCamera } from '@tabler/icons-react-native'; // Mudei IconPlus para IconPhoto, mais intuitivo
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
-import * as MediaLibrary from 'expo-media-library'; // Certifique-se de que está importado
+import { IconCamera, IconUpload } from '@tabler/icons-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { CropParamsProps } from '../crop-screen';
 
 export default function Index() {
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [mediaLibraryPermission, requestMediaLibraryPermission] = MediaLibrary.usePermissions();
-  const cameraRef = useRef<CameraView | null>(null);
+  const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
 
-  const startCapture = async () => {
+  const requestImagePickerPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access media library is required!');
+      return false;
+    }
+    return true;
+  };
+
+  const saveToCrop = async (result: ImagePicker.ImagePickerResult) => {
+    if (!result.canceled) {
+      try {
+        const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`;
+        const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
+
+        await FileSystem.deleteAsync(newUri, { idempotent: true });
+        await FileSystem.moveAsync({
+          from: result.assets[0].uri,
+          to: newUri,
+        });
+
+        const params: CropParamsProps = {
+          uri: newUri,
+          from: 'single-analysis',
+        };
+        router.navigate({ pathname: 'single-analysis/confirmation', params });
+      } catch (error) {
+        console.error('Erro ao mover/salvar arquivo:', error);
+        Alert.alert(
+          'Erro',
+          'Não foi possível preparar a imagem local para edição. Tente novamente.'
+        );
+      }
+    }
+  };
+
+  const handleCapture = async () => {
     if (!cameraPermission?.granted) {
       const { granted } = await requestCameraPermission();
       if (!granted) return Alert.alert('Erro', 'Permissão de Câmera é obrigatória.');
     }
 
-    // 2. Verifica permissão do Media Library
-    if (!mediaLibraryPermission?.granted) {
-      const { granted } = await requestMediaLibraryPermission();
-      if (!granted)
-        return Alert.alert('Erro', 'Permissão de Mídia é obrigatória para processar a imagem.');
-    }
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+      cameraType: ImagePicker.CameraType.back,
+    });
 
-    setIsCapturing(true);
+    saveToCrop(result);
   };
 
-  const takePictureHandler = async () => {
-    if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 1,
-      });
+  const handleImageUpload = async () => {
+    const hasPermission = await requestImagePickerPermissions();
+    if (!hasPermission) return;
 
-      if (photo) {
-        setIsCapturing(false);
-        try {
-          const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`;
-          const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+    });
 
-          await FileSystem.deleteAsync(newUri, { idempotent: true });
-          await FileSystem.moveAsync({
-            from: photo.uri,
-            to: newUri,
-          });
-
-          // 3. Navega para a tela de crop com o NOVO URI (seguro)
-          router.navigate({ pathname: '/crop-screen', params: { uri: newUri } });
-        } catch (error) {
-          console.error('Erro ao mover/salvar arquivo:', error);
-          Alert.alert('Erro', 'Não foi possível preparar a foto para edição. Tente novamente.');
-        }
-      }
-    }
+    saveToCrop(result);
   };
 
-  // --- Renderização de Permissão (Permanece inalterada) ---
-  if (!cameraPermission) {
-    return <View className="flex flex-1 bg-white" />;
-  }
-
-  if (!cameraPermission.granted) {
-    // ... (código para solicitar permissão) ...
-    return (
-      <View className="flex flex-1 flex-col justify-center gap-6 p-10">
-        <Text style={{ fontSize: fs(20) }} className="text-center font-regular">
-          Permissão Necessária
-        </Text>
-        <Text style={{ fontSize: fs(12) }} className="text-center font-regular leading-5">
-          Acesso à Câmera é obrigatório para escanear rótulos.
-        </Text>
-        <Button style={{ backgroundColor: colors.blue.base }} onPress={() => startCapture()}>
-          <Button.Title>Conceder Permissão</Button.Title>
-          <Button.Icon icon={IconCamera} />
-        </Button>
-      </View>
-    );
-  }
-
-  // --- RENDERIZAÇÃO DA CÂMERA ---
-  if (isCapturing) {
-    return (
-      <View className="flex-1 justify-end bg-black">
-        <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
-          <View className="flex-1 justify-end px-10 py-20">
-            <TouchableOpacity
-              onPress={() => setIsCapturing(false)}
-              style={{ position: 'absolute', left: 20, top: 20, zIndex: 10 }}
-              className="rounded-full bg-gray-900/50 p-2">
-              <IconArrowBack size={30} color="white" />
-            </TouchableOpacity>
-          </View>
-          <View className="mb-10 w-full flex-row items-center justify-center">
-            <TouchableOpacity
-              onPress={takePictureHandler}
-              className="h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/30">
-              <IconCamera size={30} color="white" />
-            </TouchableOpacity>
-          </View>
-        </CameraView>
-      </View>
-    );
-  }
-
-  // --- RENDERIZAÇÃO DA TELA DE INSTRUÇÕES ---
   return (
-    <View className="flex flex-1 flex-col justify-evenly p-10">
-      <Text style={{ fontSize: fs(25) }} className="text-center font-regular">
+    <View className="flex flex-1 flex-col justify-between p-10">
+      <Text
+        allowFontScaling={false}
+        style={{ fontSize: fs(28) }}
+        className="text-center font-regular">
         Siga as Instruções
       </Text>
       <SingleAnalysisSteps />
-      <View className="mt-5">
-        <Button style={{ backgroundColor: colors.blue.base }} onPress={startCapture}>
-          <Button.Icon icon={IconCamera} />
-          <Button.Title>Iniciar Captura</Button.Title>
-        </Button>
+      <View className="mt-5 flex flex-col gap-2">
+        {!cameraPermission || !cameraPermission.granted ? (
+          <View className="mx-auto mt-5 flex flex-col gap-2 rounded-2xl border-[1px] border-gray-400 bg-yellow-50 px-10 py-6">
+            <Text
+              allowFontScaling={false}
+              style={{ fontSize: fs(12) }}
+              className="text-center font-semiBold leading-3">
+              Permissão Necessária
+            </Text>
+            <Text
+              allowFontScaling={false}
+              style={{ fontSize: fs(10) }}
+              className="text-center font-regular">
+              Acesso à Câmera é obrigatório para escanear rótulos.
+            </Text>
+            <Button style={{ backgroundColor: colors.blue.dark }} onPress={handleCapture}>
+              <Button.Title>Conceder Permissão</Button.Title>
+              <Button.Icon icon={IconCamera} />
+            </Button>
+          </View>
+        ) : (
+          <>
+            <Button style={{ backgroundColor: colors.blue.base }} onPress={handleCapture}>
+              <Button.Icon icon={IconCamera} />
+              <Button.Title>Iniciar Captura</Button.Title>
+            </Button>
+            <Text allowFontScaling={false} className="text-center font-regular">
+              ou
+            </Text>
+            <Button style={{ backgroundColor: colors.green.light }} onPress={handleImageUpload}>
+              <Button.Icon icon={IconUpload} />
+              <Button.Title>Fazer Upload</Button.Title>
+            </Button>
+          </>
+        )}
       </View>
     </View>
   );

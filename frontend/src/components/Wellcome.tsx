@@ -15,10 +15,13 @@ export default function Wellcome() {
     <View className="flex-1 flex-col justify-between gap-10">
       {/* HEADER */}
       <View className="flex-col items-center justify-center gap-2">
-        <Text style={{ fontSize: fs(30) }} className="font-extrabold">
+        <Text allowFontScaling={false} style={{ fontSize: fs(36) }} className="font-extrabold">
           ScaninusVet 🐶
         </Text>
-        <Text style={{ fontSize: fs(15) }} className="text-center font-semiBold">
+        <Text
+          allowFontScaling={false}
+          style={{ fontSize: fs(18) }}
+          className="text-center font-semiBold">
           Cálculos Nutricionais Instantâneos
         </Text>
       </View>

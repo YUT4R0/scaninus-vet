@@ -6,8 +6,13 @@ import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+export type CropParamsProps = {
+  uri: string;
+  from: string;
+};
+
 export default function CropScreen() {
-  const { uri } = useLocalSearchParams<{ uri: string }>();
+  const { uri, from } = useLocalSearchParams<CropParamsProps>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export default function CropScreen() {
   }
 
   const handleEditingComplete = (data: { uri: string; width: number; height: number }) => {
-    router.replace({ pathname: '/confirmation', params: { uri: data.uri } });
+    router.navigate({ pathname: `${from}/confirmation`, params: { uri: data.uri } });
   };
 
   const handleCancel = async () => {

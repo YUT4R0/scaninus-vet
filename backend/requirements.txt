@@ -7,6 +7,7 @@ charset-normalizer==3.4.3
 click==8.3.0
 dotenv==0.9.9
 Flask==3.1.2
+flask-cors==6.0.1
 google-auth==2.41.1
 google-genai==1.41.0
 h11==0.16.0

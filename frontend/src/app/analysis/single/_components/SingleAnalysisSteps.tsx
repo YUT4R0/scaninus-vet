@@ -1,7 +1,7 @@
+import { Step } from '@/components/Step';
 import { View } from 'react-native';
-import { Step } from './Step';
 
-export function SingleAnalysisSteps() {
+export default function SingleAnalysisSteps() {
   return (
     <View className="flex flex-col gap-5">
       <Step

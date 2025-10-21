@@ -1,5 +1,4 @@
 import { Button } from '@/components/Button';
-import { SingleAnalysisSteps } from '@/components/SingleAnalysisSteps';
 import { colors } from '@/styles/colors';
 import { fs } from '@/utils/responsive';
 import { IconCamera, IconUpload } from '@tabler/icons-react-native';
@@ -8,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { router } from 'expo-router';
 import { Alert, Text, View } from 'react-native';
-import { CropParamsProps } from '../crop-screen';
+import SingleAnalysisSteps from './_components/SingleAnalysisSteps';
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
@@ -34,11 +33,11 @@ export default function Index() {
           to: newUri,
         });
 
-        const params: CropParamsProps = {
+        const params = {
           uri: newUri,
           from: 'single-analysis',
         };
-        router.navigate({ pathname: 'single-analysis/confirmation', params });
+        router.navigate({ pathname: './single/confirmation', params });
       } catch (error) {
         console.error('Erro ao mover/salvar arquivo:', error);
         Alert.alert(

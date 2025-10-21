@@ -11,7 +11,7 @@ export default function Index() {
         <Wellcome />
       </View>
       <View className="flex h-[15%] w-full justify-center">
-        <Button onPress={() => router.navigate('/home')}>
+        <Button onPress={() => router.navigate('/analysis')}>
           <Button.Title>Começar</Button.Title>
         </Button>
       </View>

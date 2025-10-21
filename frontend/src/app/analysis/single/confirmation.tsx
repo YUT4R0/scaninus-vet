@@ -12,7 +12,7 @@ export default function Confirmation() {
 
   if (!uri) {
     Alert.alert('Erro', 'Nenhuma imagem para confirmação.');
-    router.replace('/home');
+    router.replace('/analysis');
     return <View />;
   }
 
@@ -25,7 +25,7 @@ export default function Confirmation() {
     } catch (e) {
       console.warn('Erro ao deletar arquivo após cancelamento:', e);
     }
-    router.replace('/single-analysis'); // Volta para a tela inicial (instruções da câmera)
+    router.replace('/'); // Volta para a tela inicial (instruções da câmera)
   };
 
   const handleSend = async () => {
@@ -95,7 +95,7 @@ export default function Confirmation() {
       return;
     }
     router.replace({
-      pathname: 'single-analysis/agent-response',
+      pathname: './single/agent-response',
       params: { uri: currentUriToSend },
     });
   };

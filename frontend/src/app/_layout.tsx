@@ -9,7 +9,7 @@ import {
 } from '@expo-google-fonts/rubik';
 import { Stack } from 'expo-router';
 import React from 'react';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import '../../global.css';
 
@@ -24,45 +24,83 @@ export default function Layot() {
   if (!fontsLoaded) return <Loading />;
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.gray[100] }}
-        edges={['top', 'bottom']}>
-        <Stack
-          screenOptions={{
-            headerShown: true,
-            contentStyle: { backgroundColor: colors.gray[100] },
-            headerStyle: { backgroundColor: colors.gray[100] },
-          }}>
-          <Stack.Screen name="index" options={{ headerShown: false, title: 'Bem-vindo' }} />
-          <Stack.Screen name="home" options={{ headerShown: false, title: 'Home' }} />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: colors.gray[100] }}
+          edges={['top', 'bottom']}>
+          <Stack
+            screenOptions={{
+              headerShown: true,
+              contentStyle: { backgroundColor: colors.gray[100] },
+              headerStyle: { backgroundColor: colors.gray[100] },
+            }}>
+            <Stack.Screen name="index" options={{ headerShown: false, title: 'Bem-vindo' }} />
+            <Stack.Screen name="analysis/index" options={{ headerShown: false, title: 'Home' }} />
 
-          <Stack.Screen
-            name="single-analysis/index"
-            options={{
-              title: 'Análise Simples',
-              headerTitleStyle: {
-                fontSize: 18,
-              },
-              headerTitleAlign: 'center',
-            }}
-          />
-          <Stack.Screen
-            name="single-analysis/agent-response"
+            <Stack.Screen
+              name="analysis/single/index"
+              options={{
+                title: 'Análise Simples',
+                headerTitleStyle: {
+                  fontSize: 18,
+                  fontWeight: '100',
+                  color: colors.gray[500],
+                },
+                headerShadowVisible: false,
+                headerTitleAlign: 'center',
+              }}
+            />
+            <Stack.Screen
+              name="analysis/single/agent-response"
+              options={{
+                title: 'Resultado da Análise',
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontSize: 18,
+                  fontWeight: '100',
+                  color: colors.gray[500],
+                },
+                headerTitleAlign: 'center',
+              }}
+            />
+            <Stack.Screen
+              name="analysis/single/confirmation"
+              options={{ title: '', headerShown: false }}
+            />
+            <Stack.Screen
+              name="analysis/comparative/index"
+              options={{
+                title: 'Análise Comparativa',
+                headerTitleStyle: {
+                  fontSize: 18,
+                  fontWeight: '100',
+                  color: colors.gray[500],
+                },
+                headerShadowVisible: false,
+                headerTitleAlign: 'center',
+              }}
+            />
+            {/* <Stack.Screen
+            name="analysis/comparative/agent-response"
             options={{
               title: 'Resultado da Análise',
-              headerTitleAlign: 'center',
+              headerShadowVisible: false,
               headerTitleStyle: {
                 fontSize: 18,
+                fontWeight: '100',
+                color: colors.gray[500],
               },
+              headerTitleAlign: 'center',
             }}
-          />
-          <Stack.Screen
-            name="single-analysis/confirmation"
-            options={{ title: '', headerShown: false }}
-          />
-        </Stack>
-      </SafeAreaView>
-    </SafeAreaProvider>
+          /> */}
+            <Stack.Screen
+              name="analysis/comparative/confirmation"
+              options={{ title: '', headerShown: false }}
+            />
+          </Stack>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

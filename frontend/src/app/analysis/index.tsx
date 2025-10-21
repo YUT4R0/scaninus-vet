@@ -1,9 +1,10 @@
-import { AnalysisOption } from '@/components/AnalysisOption';
 import { fs } from '@/utils/responsive';
+import { IconLayersDifference, IconTextScan2 } from '@tabler/icons-react-native';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
+import AnalysisOption from './_components/AnalysisOption';
 
-export default function Home() {
+export default function Index() {
   return (
     <View className="flex-1 gap-12 px-10 py-16">
       <View className="flex items-center justify-center gap-4">
@@ -22,11 +23,14 @@ export default function Home() {
         <AnalysisOption
           title="Análise Simples"
           description="Será feita a análise de qualidade dedicada a uma ração."
-          onPress={() => router.navigate('/single-analysis')}
+          icon={IconTextScan2}
+          onPress={() => router.navigate('analysis/single')}
         />
         <AnalysisOption
           title="Análise Comparativa"
           description="Será feita uma análise comparativa de qualidade entre duas ou mais rações."
+          icon={IconLayersDifference}
+          onPress={() => router.push('analysis/comparative')}
         />
       </View>
     </View>

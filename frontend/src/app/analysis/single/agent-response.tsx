@@ -143,7 +143,7 @@ export default function AgentResponse() {
       <View className="mt-10 flex w-full flex-row items-center justify-center gap-10">
         {isLoading ? (
           <Button
-            onPress={() => router.replace({ pathname: '/home' })}
+            onPress={() => router.replace({ pathname: '/analysis' })}
             style={{ backgroundColor: colors.red.base, width: '50%' }}>
             <Button.Icon icon={IconCancel} />
             <Button.Title>Cancelar</Button.Title>
@@ -151,13 +151,13 @@ export default function AgentResponse() {
         ) : (
           <>
             <Button
-              onPress={() => router.replace({ pathname: '/home' })}
+              onPress={() => router.replace({ pathname: '/analysis' })}
               style={{ backgroundColor: colors.gray[500], width: '46%' }}>
               <Button.Icon icon={IconHome2} />
               <Button.Title>Home</Button.Title>
             </Button>
             <Button
-              onPress={() => router.replace({ pathname: '/single-analysis' })}
+              onPress={() => router.replace({ pathname: '/analysis' })}
               style={{ backgroundColor: colors.blue.base, width: '46%' }}>
               <Button.Icon icon={IconCamera} />
               <Button.Title>Nova Análise</Button.Title>

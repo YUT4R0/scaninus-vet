@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { Alert, Text, View } from 'react-native';
 import ComparativeAnalysisSteps from './_components/ComparativeAnalysisSteps';
 
-export const SELECTION_LIMIT = 5;
+export const SELECTION_LIMIT = 3;
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
@@ -77,6 +77,7 @@ export default function Index() {
       mediaTypes: ['images'],
       quality: 1,
       allowsMultipleSelection: true,
+      aspect: [3, 4],
       selectionLimit: SELECTION_LIMIT,
     });
 

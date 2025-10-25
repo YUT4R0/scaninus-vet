@@ -37,6 +37,14 @@ export default function Layot() {
             }}>
             <Stack.Screen name="index" options={{ headerShown: false, title: 'Bem-vindo' }} />
             <Stack.Screen name="analysis/index" options={{ headerShown: false, title: 'Home' }} />
+            <Stack.Screen
+              name="analysis/single/agent-response"
+              options={{ headerShown: false, title: 'Home' }}
+            />
+            <Stack.Screen
+              name="analysis/comparative/agent-response"
+              options={{ headerShown: false, title: 'Home' }}
+            />
 
             <Stack.Screen
               name="analysis/single/index"
@@ -51,7 +59,7 @@ export default function Layot() {
                 headerTitleAlign: 'center',
               }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
               name="analysis/single/agent-response"
               options={{
                 title: 'Resultado da Análise',
@@ -63,10 +71,13 @@ export default function Layot() {
                 },
                 headerTitleAlign: 'center',
               }}
-            />
+            /> */}
             <Stack.Screen
               name="analysis/single/confirmation"
-              options={{ title: '', headerShown: false }}
+              options={{
+                title: '',
+                headerShown: false,
+              }}
             />
             <Stack.Screen
               name="analysis/comparative/index"
@@ -82,18 +93,18 @@ export default function Layot() {
               }}
             />
             {/* <Stack.Screen
-            name="analysis/comparative/agent-response"
-            options={{
-              title: 'Resultado da Análise',
-              headerShadowVisible: false,
-              headerTitleStyle: {
-                fontSize: 18,
-                fontWeight: '100',
-                color: colors.gray[500],
-              },
-              headerTitleAlign: 'center',
-            }}
-          /> */}
+              name="analysis/comparative/agent-response"
+              options={{
+                title: 'Resultado da Análise',
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontSize: 18,
+                  fontWeight: '100',
+                  color: colors.gray[500],
+                },
+                headerTitleAlign: 'center',
+              }}
+            /> */}
             <Stack.Screen
               name="analysis/comparative/confirmation"
               options={{ title: '', headerShown: false }}

@@ -8,7 +8,7 @@ def create_app(config=Config):
     app = Flask(__name__)
     CORS(app)
     app.config.from_object(config)
-    app.config["DEBUG"] = True
+    app.config["DEBUG"] = False
     app.register_blueprint(analysis_bp)
 
     return app

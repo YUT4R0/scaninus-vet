@@ -36,23 +36,15 @@ class OCRService:
             response = requests.post(
                 url=self._url, data=payload, files=files, timeout=30000
             )
-            logger.info(f"OCR.space Status: {response.status_code}")
 
             data = response.json()
-            logger.info(f"OCR.spaece Response: {data}")
 
-            # --- Análise e Retorno do Texto ---
-
-            # Verifica se o resultado foi um sucesso (Status Code 200)
             if data["OCRExitCode"] == 1 and data["IsErroredOnProcessing"] is False:
-                # Concatena todo o texto detectado dos diferentes 'ParsedResults'
                 extracted_text = ""
                 for result in data["ParsedResults"]:
                     extracted_text += result["ParsedText"] + "\n"
 
                 return extracted_text.strip()
-
-            # Trata erros específicos retornados pela API (como imagem ilegível)
             else:
                 error_message = data.get("ErrorMessage") or data.get(
                     "OCRExitCode", "Erro desconhecido na OCR.space"

@@ -1,6 +1,7 @@
 import { colors } from '@/styles/colors';
+import { fs } from '@/utils/responsive';
 import { IconEdit, IconTrash } from '@tabler/icons-react-native';
-import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ImageCardProps {
   uri: string;
@@ -10,26 +11,43 @@ interface ImageCardProps {
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function ImageCard({ onRemove, uri, onEdit }: ImageCardProps) {
+function ImageCard({ onRemove, uri, onEdit }: ImageCardProps) {
   return (
     <View style={styles.card}>
       <Image source={{ uri }} style={styles.image} resizeMode="contain" />
       <View style={styles.overlay}>
-        {/* Botão de Excluir */}
         <TouchableOpacity onPress={() => onRemove(uri)} style={styles.deleteButton}>
-          <IconTrash size={20} color="white" />
+          <IconTrash size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => onEdit(uri)} style={styles.editButton}>
-          <IconEdit size={20} color="white" />
+          <IconEdit size={24} color="white" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+type EmptyProps = {
+  label: string;
+};
+
+function Empty({ label }: EmptyProps) {
+  return (
+    <View style={styles.card}>
+      <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="text-gray-400">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+ImageCard.Empty = Empty;
+
+export default ImageCard;
+
 const styles = StyleSheet.create({
   card: {
-    width: screenWidth * 0.7,
+    width: screenWidth * 0.8,
     height: '95%',
     marginHorizontal: 10,
     borderRadius: 12,
@@ -51,8 +69,11 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    top: 5,
-    right: 5,
+    top: 8,
+    right: 8,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
   },
   deleteButton: {
     backgroundColor: colors.red.base,

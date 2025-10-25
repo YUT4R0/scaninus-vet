@@ -1,8 +1,6 @@
 import { ImageEditor } from 'expo-dynamic-image-crop';
-import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
-import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Modal, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Modal, StyleSheet, Text, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -38,32 +36,6 @@ export default function CropScreen({ onCancel, onComplete, uri, isVisible }: Cro
       </View>
     );
   }
-
-  const handleEditingComplete = (data: { uri: string; width: number; height: number }) => {
-    router.navigate({ pathname: `confirmation`, params: { uri: data.uri } });
-  };
-
-  const handleCancel = async () => {
-    try {
-      if (uri) {
-        await FileSystem.deleteAsync(uri, { idempotent: true });
-      }
-    } catch (e) {
-      Alert.alert(
-        'Atenção',
-        'Houve um problema na remoção de cache da foto.',
-        [{ text: 'OK', onPress: () => router.back() }],
-        { cancelable: false }
-      );
-    }
-
-    Alert.alert(
-      'Atenção',
-      'Edição cancelada. Refaça a captura.',
-      [{ text: 'OK', onPress: () => router.back() }],
-      { cancelable: false }
-    );
-  };
 
   return (
     <Modal animationType="slide" visible={isVisible} className="relative flex-1">

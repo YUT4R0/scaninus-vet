@@ -1,10 +1,10 @@
 import { EnnVariables } from './enn-variables';
 
-export type AnalysisAPiResponse = {
+export type SingleAnalysisAPiResponse = {
   status: 'SUCESSO' | 'IMPRECISA' | 'FALHA';
-  enn: number | null;
+  enn?: number | null;
   response_title: 'Análise Final' | 'Dados Incompletos';
   description: string;
-  variables: EnnVariables;
+  variables?: EnnVariables;
   suggestion: string;
 };

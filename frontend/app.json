@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Scaninus Vet",
+    "slug": "scaninus-vet",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
@@ -51,6 +51,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.pedro_yutaro.scaninusvet"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "24d8ebe4-2c6a-4b46-a7f4-e419c5dd882f"
       }
     }
   }

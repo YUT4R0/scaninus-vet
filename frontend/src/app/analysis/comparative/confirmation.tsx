@@ -1,51 +1,34 @@
 import { Button } from '@/components/Button';
 import { colors } from '@/styles/colors';
 import { fs } from '@/utils/responsive';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'; // NOVO IMPORT
-import { IconCamera, IconUpload, IconX } from '@tabler/icons-react-native';
+import BottomSheet from '@gorhom/bottom-sheet'; // NOVO IMPORT
+import { IconPlus } from '@tabler/icons-react-native';
 import * as FileSystem from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Alert,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { SELECTION_LIMIT } from '.';
-import CropScreen, { EditedImageProps } from './_components/CropScreen';
-import ImageCard from './_components/ImageCard';
+import AddFoodBottomSheet from '../_components/AddFoodBottomSheet';
+import CropScreen, { EditedImageProps } from '../_components/CropScreen';
+import ImageCard from '../_components/ImageCard';
 
-const { width: screenWidth } = Dimensions.get('window');
 const MAX_SIZE_BYTES = 1 * 1024 * 1024; // 1 MB
 
 export default function Confirmation() {
-  // CORREÇÃO: Recebendo o parâmetro 'uris' (string separada por vírgula)
   const { uris: urisParam } = useLocalSearchParams<{ uris: string | string[] }>();
-
-  // Converte o parâmetro para um array de URIs
   const initialUris = Array.isArray(urisParam) ? urisParam : urisParam ? urisParam.split(',') : [];
-
-  // Estado que armazena a lista ATUAL de URIs
   const [currentUris, setCurrentUris] = useState<string[]>(initialUris);
 
-  // Estado que armazena a lista ATUAL de URIs
   const [isCropScreenOpen, setIsCropScreenOpen] = useState<boolean>(false);
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = ['25%'];
-
   const handlePresentModalPress = useCallback(() => {
     bottomSheetRef.current?.expand();
   }, []);
-
   const handleCloseModalPress = useCallback(() => {
     bottomSheetRef.current?.close();
   }, []);
@@ -108,6 +91,7 @@ export default function Confirmation() {
       mediaTypes: ['images'],
       quality: 1,
       allowsMultipleSelection: true,
+      aspect: [3, 4],
       selectionLimit: SELECTION_LIMIT - currentUris.length,
     });
     if (!results.canceled && results.assets && results.assets.length > 0) {
@@ -129,33 +113,42 @@ export default function Confirmation() {
       throw new Error('Arquivo não encontrado.');
     }
 
-    // Loop de compressão (tentativas de 0.85 até 0.50)
     while (fileSize > MAX_SIZE_BYTES && attempt < MAX_COMPRESSION_ATTEMPTS) {
       attempt++;
       compressionQuality = Math.max(0.5, compressionQuality - 0.15);
 
-      const result = await ImageManipulator.manipulateAsync(fileUri, [], {
+      const imageRef = await ImageManipulator.manipulate(fileUri).renderAsync();
+
+      const compressedResult = await imageRef.saveAsync({
         compress: compressionQuality,
         format: SaveFormat.JPEG,
       });
 
-      // O URI de compressão deve ser lido para verificar o novo tamanho
-      fileUri = result.uri;
+      fileUri = compressedResult.uri;
 
       let newFileInfo = await FileSystem.getInfoAsync(fileUri, { size: true });
       if (newFileInfo.exists && newFileInfo.size !== undefined) {
         fileSize = newFileInfo.size;
       } else {
-        throw new Error('Falha na leitura do arquivo comprimido.');
+        Alert.alert(
+          'Falha na Leitura',
+          'Houve algum problema na leitura do arquivo comprimido. Tente novamente com uma outra imagem.',
+          [{ text: 'OK', style: 'cancel' }]
+        );
+        return;
       }
     }
 
     if (fileSize > MAX_SIZE_BYTES) {
-      // Se ainda for muito grande, retorna um erro para ser tratado no handleSendBatch
-      throw new Error(`O arquivo ${Math.round(fileSize / 1024)}KB é grande demais.`);
+      Alert.alert(
+        'Aviso de Tamanho',
+        `A imagem (${Math.round(fileSize / 1024)}KB) ainda é muito grande (Máx: 1MB).`,
+        [{ text: 'OK', style: 'cancel' }]
+      );
+      return;
     }
 
-    return fileUri; // Retorna o URI comprimido final
+    return fileUri;
   };
 
   const handleEdit = async (uriToEdit: string) => {
@@ -174,7 +167,7 @@ export default function Confirmation() {
 
   const handleRemove = async (uriToRemove: string) => {
     Alert.alert(
-      'Exluir imagem',
+      'Exluir Ração',
       'Você tem certeza que deseja excluir esta imagem (as edições não serão salvas)?',
       [
         {
@@ -200,12 +193,11 @@ export default function Confirmation() {
   };
 
   const handleCancelAll = async () => {
-    // Limpa TODOS os arquivos e volta para o início
     const deletePromises = currentUris.map((uri) =>
       FileSystem.deleteAsync(uri, { idempotent: true })
     );
     await Promise.all(deletePromises);
-    router.replace('/');
+    router.replace('/analysis');
   };
 
   const handleSendBatch = async () => {
@@ -215,17 +207,14 @@ export default function Confirmation() {
     }
 
     try {
-      // 1. COMPRESSÃO EM LOTE (Paralela)
       const compressionPromises = currentUris.map((uri) => compressImage(uri));
       const compressedUris = await Promise.all(compressionPromises);
 
-      // 2. NAVEGAÇÃO PARA A TELA DE ANÁLISE
       router.replace({
-        pathname: './comparative/agent-response',
-        params: { uris: compressedUris.join(',') }, // Envia o novo array de URIs como string
+        pathname: './agent-response',
+        params: { uris: compressedUris.join(',') },
       });
     } catch (error: any) {
-      // Captura erros de compressão/tamanho
       Alert.alert(
         'Erro de Envio',
         error.message || 'Falha ao compactar uma das imagens para o limite de 1MB.'
@@ -249,9 +238,9 @@ export default function Confirmation() {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 items-center justify-between py-10">
       {/* 1. HEADER */}
-      <View style={styles.header}>
+      <View className="w-full items-center px-10">
         <Text
           allowFontScaling={false}
           style={{ fontSize: fs(25) }}
@@ -260,34 +249,57 @@ export default function Confirmation() {
         </Text>
         <Text
           allowFontScaling={false}
-          style={{ fontSize: fs(13) }}
-          className="text-center font-regular leading-5 text-gray-600">
+          style={{ fontSize: fs(14) }}
+          className="text-center font-regular leading-6">
           Revise e ajuste as fotos antes de enviar o lote para análise.
         </Text>
       </View>
 
       {/* 2. SCROLLVIEW HORIZONTAL (CORREÇÃO DO SCROLL) */}
-      <View className="flex h-[60%] w-full items-center justify-center">
+      <View className="flex h-[70%] w-full items-center justify-center">
         <ScrollView
           horizontal={true}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.flatlistContent}>
+          contentContainerStyle={{ paddingHorizontal: 10, alignItems: 'center' }}>
           {currentUris.length > 0 ? (
-            currentUris.map((uri) => (
-              <ImageCard key={uri} uri={uri} onEdit={handleEdit} onRemove={handleRemove} />
+            currentUris.map((uri, i) => (
+              <View key={i} className="flex-col items-center gap-1 py-5">
+                <Text
+                  allowFontScaling={false}
+                  style={{ fontSize: fs(20) }}
+                  className="text-center font-semiBold">
+                  Ração Nº{i + 1}
+                </Text>
+                <ImageCard key={i} uri={uri} onEdit={handleEdit} onRemove={handleRemove} />
+              </View>
             ))
           ) : (
-            <View style={styles.emptyList}>
-              <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="text-gray-400">
-                Nenhuma ração adicionada.
-              </Text>
-            </View>
+            <ImageCard.Empty label="Nenhuma ração adicionada." />
           )}
         </ScrollView>
       </View>
 
+      {/* 4. BOTÃO ADICIONAR Ração */}
+      <View className="w-[50%]">
+        {currentUris.length < SELECTION_LIMIT && (
+          <Button
+            onPress={handlePresentModalPress}
+            style={{
+              backgroundColor: colors.blue.light,
+              width: '100%',
+              borderRadius: 25,
+              borderWidth: 2,
+              borderStyle: 'dashed',
+              borderColor: colors.blue.dark,
+            }}>
+            <Button.Icon icon={IconPlus} />
+            <Button.Title>Adicionar Ração</Button.Title>
+          </Button>
+        )}
+      </View>
+
       {/* 3. BOTÕES DE AÇÃO */}
-      <View style={styles.footer}>
+      <View className="mt-5 flex w-full flex-row justify-between px-10">
         <Button
           onPress={handleCancelAll}
           style={{ backgroundColor: colors.red.base, width: '45%' }}>
@@ -300,102 +312,14 @@ export default function Confirmation() {
         </Button>
       </View>
 
-      {/* 4. BOTÃO ADICIONAR Ração */}
-      <View style={styles.actionButtons}>
-        {currentUris.length < SELECTION_LIMIT && (
-          <Button
-            onPress={handlePresentModalPress}
-            style={{ backgroundColor: colors.blue.light, width: '100%' }}>
-            <Button.Icon icon={IconCamera} />
-            <Button.Title>Adicionar Ração</Button.Title>
-          </Button>
-        )}
-      </View>
-
-      <BottomSheet
+      <AddFoodBottomSheet
         ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={true}
-        backgroundStyle={{ backgroundColor: colors.gray[100] }}
-        handleIndicatorStyle={{ backgroundColor: colors.gray[400] }}>
-        <BottomSheetView style={styles.sheetContent}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Adicionar Ração</Text>
-            <TouchableOpacity onPress={handleCloseModalPress}>
-              <IconX size={24} color={colors.gray[600]} />
-            </TouchableOpacity>
-          </View>
-          <Button style={styles.sheetButton} onPress={handleCapture}>
-            <Button.Icon icon={IconCamera} />
-            <Button.Title>Tirar Nova Foto</Button.Title>
-          </Button>
-          <Button
-            style={[styles.sheetButton, { backgroundColor: colors.green.light }]}
-            onPress={handleUploadFromGallery}>
-            <Button.Icon icon={IconUpload} />
-            <Button.Title>Selecionar da Galeria</Button.Title>
-          </Button>
-        </BottomSheetView>
-      </BottomSheet>
+        onClose={handleCloseModalPress}
+        actions={{
+          onCapture: handleCapture,
+          onUpload: handleUploadFromGallery,
+        }}
+      />
     </View>
   );
 }
-
-// --- Estilos ---
-const styles = StyleSheet.create({
-  sheetContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  sheetTitle: {
-    fontSize: fs(20),
-    fontWeight: 'bold',
-    color: colors.gray[600],
-  },
-  sheetButton: {
-    marginBottom: 10,
-    backgroundColor: colors.blue.base,
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'white',
-  },
-  header: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  flatlistContent: {
-    paddingHorizontal: 10,
-    alignItems: 'center',
-  },
-  emptyList: {
-    width: screenWidth - 40,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
-  },
-  actionButtons: {
-    width: '100%',
-    marginTop: 10,
-  },
-});

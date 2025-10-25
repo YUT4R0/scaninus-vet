@@ -1,88 +1,157 @@
 import { Button } from '@/components/Button';
 import { colors } from '@/styles/colors';
 import { fs } from '@/utils/responsive';
-import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
+import { IconPlus } from '@tabler/icons-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+
+import BottomSheet from '@gorhom/bottom-sheet';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert, Image, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Text, View } from 'react-native';
+import AddFoodBottomSheet from '../_components/AddFoodBottomSheet';
+import CropScreen, { EditedImageProps } from '../_components/CropScreen';
+import ImageCard from '../_components/ImageCard';
 const MAX_SIZE_BYTES = 1 * 1024 * 1024;
 
 export default function Confirmation() {
-  const { uri } = useLocalSearchParams<{ uri: string }>();
+  const { uri: uriParam } = useLocalSearchParams<{ uri: string }>();
+  const [currentUri, setCurrentUri] = useState<string | undefined>(uriParam);
 
-  if (!uri) {
-    Alert.alert('Erro', 'Nenhuma imagem para confirmação.');
-    router.replace('/analysis');
-    return <View />;
-  }
+  const [isCropScreenOpen, setIsCropScreenOpen] = useState<boolean>(false);
+  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetRef.current?.expand();
+  }, []);
+  const handleCloseModalPress = useCallback(() => {
+    bottomSheetRef.current?.close();
+  }, []);
+
+  const handleCapture = async () => {
+    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+    if (!granted) {
+      Alert.alert('Permissão', 'Câmera é necessária.');
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      processNewPhoto(result);
+    }
+  };
+
+  const handleUploadFromGallery = async () => {
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) {
+      Alert.alert('Permissão', 'Acesso à galeria é necessário.');
+      return;
+    }
+
+    let results = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+      allowsEditing: true,
+      aspect: [3, 4],
+    });
+    if (!results.canceled && results.assets && results.assets.length > 0) {
+      processNewPhoto(results);
+    }
+  };
+
+  const processNewPhoto = async (result: ImagePicker.ImagePickerResult) => {
+    handleCloseModalPress();
+
+    if (!result.canceled || result.assets !== null) {
+      try {
+        for (const [i, img] of result.assets.entries()) {
+          const TEMP_FILE_NAME = `image_crop_${Date.now()}_${Math.random().toString(26).substring(2, 9)}_${i}.jpg`;
+
+          const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
+
+          await FileSystem.deleteAsync(newUri, { idempotent: true });
+          await FileSystem.copyAsync({
+            from: img.uri,
+            to: newUri,
+          });
+
+          setCurrentUri(newUri);
+        }
+      } catch (error) {
+        console.error('Erro ao mover/salvar arquivo:', error);
+        Alert.alert('Erro', 'Não foi possível salvar a nova foto.');
+      }
+    }
+  };
+
+  const handleEdit = async (uriToEdit: string) => {
+    setIsCropScreenOpen(true);
+    setImageToEdit(uriToEdit);
+  };
+
+  const handleEditingComplete = (result: EditedImageProps) => {
+    if (result.uri) {
+      setCurrentUri(result.uri);
+    }
+    setImageToEdit(null);
+    setIsCropScreenOpen(false);
+  };
 
   const handleCancel = async () => {
-    // Limpa o arquivo temporário se o usuário cancelar
     try {
-      if (uri) {
-        await FileSystem.deleteAsync(uri, { idempotent: true });
+      if (currentUri) {
+        await FileSystem.deleteAsync(currentUri, { idempotent: true });
       }
     } catch (e) {
       console.warn('Erro ao deletar arquivo após cancelamento:', e);
     }
-    router.replace('/'); // Volta para a tela inicial (instruções da câmera)
+    router.replace('/analysis');
   };
 
-  const handleSend = async () => {
-    if (!uri) return;
-
-    const MAX_COMPRESSION_ATTEMPTS = 10;
+  const compressImage = async (uriToCompress: string) => {
     let compressionQuality = 0.85;
     let attempt = 0;
-    let currentUriToSend = uri;
+    let fileUri = uriToCompress;
     let fileSize = 0;
+    const MAX_COMPRESSION_ATTEMPTS = 10;
 
-    const initialFileInfo = await FileSystem.getInfoAsync(currentUriToSend, { size: true });
-
-    if (initialFileInfo.exists && initialFileInfo.size !== undefined) {
-      fileSize = initialFileInfo.size;
+    let fileInfo = await FileSystem.getInfoAsync(fileUri, { size: true });
+    if (fileInfo.exists && fileInfo.size !== undefined) {
+      fileSize = fileInfo.size;
     } else {
-      Alert.alert('Erro', 'Arquivo de imagem não encontrado no cache.');
-      return;
+      throw new Error('Arquivo não encontrado.');
     }
 
     while (fileSize > MAX_SIZE_BYTES && attempt < MAX_COMPRESSION_ATTEMPTS) {
       attempt++;
-
-      // Reduz a qualidade em passos, garantindo que não caia abaixo de 0.5 (50%)
-      // Para a tentativa 1 (0.85 -> 0.70), Tentativa 2 (0.70 -> 0.55), etc.
       compressionQuality = Math.max(0.5, compressionQuality - 0.15);
 
-      try {
-        // CORREÇÃO: Usamos o ImageManipulator.manipulate para iniciar o contexto.
-        // Aplicamos a compressão e obtemos o resultado em uma única cadeia de promises.
+      const imageRef = await ImageManipulator.manipulate(fileUri).renderAsync();
 
-        // 1. Renderiza a imagem no contexto atual (sem ações, apenas para gerar o ImageRef)
-        const imageRef = await ImageManipulator.manipulate(uri).renderAsync();
+      const compressedResult = await imageRef.saveAsync({
+        compress: compressionQuality,
+        format: SaveFormat.JPEG,
+      });
 
-        // 2. Salva o resultado no disco com as opções de compressão
-        const compressedResult = await imageRef.saveAsync({
-          compress: compressionQuality,
-          format: SaveFormat.JPEG,
-        });
+      fileUri = compressedResult.uri;
 
-        currentUriToSend = compressedResult.uri;
-
-        const newFileInfo = await FileSystem.getInfoAsync(currentUriToSend, { size: true });
-
-        if (newFileInfo.exists && newFileInfo.size !== undefined) {
-          fileSize = newFileInfo.size;
-        } else {
-          break;
-        }
-
-        console.log(
-          `Tentativa ${attempt}: Qualidade ${Math.round(compressionQuality * 100)}%, Tamanho: ${Math.round(fileSize / 1024)}KB`
+      let newFileInfo = await FileSystem.getInfoAsync(fileUri, { size: true });
+      if (newFileInfo.exists && newFileInfo.size !== undefined) {
+        fileSize = newFileInfo.size;
+      } else {
+        Alert.alert(
+          'Falha na Leitura',
+          'Houve algum problema na leitura do arquivo comprimido. Tente novamente com uma outra imagem.',
+          [{ text: 'OK', style: 'cancel' }]
         );
-      } catch (error) {
-        console.error('Erro na compressão:', error);
-        Alert.alert('Erro de Processamento', 'Falha ao comprimir a imagem.');
-        break;
+        return;
       }
     }
 
@@ -94,43 +163,128 @@ export default function Confirmation() {
       );
       return;
     }
-    router.replace({
-      pathname: './single/agent-response',
-      params: { uri: currentUriToSend },
-    });
+
+    return fileUri;
   };
 
+  const handleSend = async () => {
+    if (!currentUri) return;
+
+    try {
+      const compressedUri = await compressImage(currentUri);
+      router.replace({
+        pathname: './agent-response',
+        params: { uri: compressedUri },
+      });
+    } catch (error: any) {
+      Alert.alert(
+        'Erro de Envio',
+        error.message || 'Falha ao compactar uma das imagens para o limite de 1MB.'
+      );
+    }
+  };
+
+  const handleRemove = async (uriToRemove: string) => {
+    Alert.alert(
+      'Exluir Ração',
+      'Você tem certeza que deseja excluir esta imagem (as edições não serão salvas)?',
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => {
+            return;
+          },
+        },
+        {
+          text: 'Excluir',
+          onPress: async () => {
+            try {
+              await FileSystem.deleteAsync(uriToRemove, { idempotent: true });
+              setCurrentUri(undefined);
+            } catch (e) {
+              console.warn('Erro ao deletar arquivo:', e);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  if (isCropScreenOpen && imageToEdit) {
+    return (
+      <CropScreen
+        onCancel={() => {
+          setIsCropScreenOpen(false);
+          setImageToEdit(null);
+        }}
+        onComplete={handleEditingComplete}
+        uri={imageToEdit}
+        key={imageToEdit}
+        isVisible={isCropScreenOpen}
+      />
+    );
+  }
+
   return (
-    <View className="flex-1 justify-between gap-12 p-10">
-      <View className="flex h-[20%] items-center justify-center gap-2">
-        <Text allowFontScaling={false} style={{ fontSize: fs(28) }} className="font-regular">
-          Confirmar imagem a ser analisada
+    <View className="flex-1 justify-between p-10">
+      <View className="flex items-center justify-center">
+        <Text
+          allowFontScaling={false}
+          style={{ fontSize: fs(25) }}
+          className="text-center font-semiBold">
+          Confirmar Rótulo
         </Text>
         <Text
           allowFontScaling={false}
           style={{ fontSize: fs(14) }}
-          className="font-regular leading-6">
+          className="text-center font-regular leading-6">
           Antes de enviar para análise, certifique-se de que a legibilidade das informações esteja
           boa.
         </Text>
       </View>
-      <View className="flex h-[60%] w-full items-center justify-center rounded-md bg-gray-600 p-0">
-        {uri ? (
-          <Image source={{ uri }} style={{ height: '100%', width: '100%' }} resizeMode="contain" />
+      <View className="flex h-[70%] w-full items-center justify-center">
+        {currentUri ? (
+          <ImageCard onEdit={handleEdit} onRemove={handleRemove} uri={currentUri} />
         ) : (
-          <Text allowFontScaling={false} style={{ fontSize: fs(13) }} className="text-gray-400">
-            Nenhuma imagem para exibir.
-          </Text>
+          <ImageCard.Empty label="Nenhuma ração selecionada." />
         )}
       </View>
-      <View className="flex h-[10%] w-full flex-row items-center justify-center gap-10">
-        <Button onPress={handleCancel} style={{ backgroundColor: colors.red.base, width: '40%' }}>
+
+      <View className="mx-auto w-[50%]">
+        {!currentUri && (
+          <Button
+            onPress={handlePresentModalPress}
+            style={{
+              backgroundColor: colors.blue.light,
+              width: '100%',
+              borderRadius: 25,
+              borderWidth: 2,
+              borderStyle: 'dashed',
+              borderColor: colors.blue.dark,
+            }}>
+            <Button.Icon icon={IconPlus} />
+            <Button.Title>Adicionar Ração</Button.Title>
+          </Button>
+        )}
+      </View>
+
+      <View className="mt-5 flex w-full flex-row items-center justify-between">
+        <Button onPress={handleCancel} style={{ backgroundColor: colors.red.base, width: '45%' }}>
           <Button.Title>Cancelar</Button.Title>
         </Button>
-        <Button onPress={handleSend} style={{ backgroundColor: colors.green.base, width: '40%' }}>
+        <Button onPress={handleSend} style={{ backgroundColor: colors.green.base, width: '45%' }}>
           <Button.Title>Enviar</Button.Title>
         </Button>
       </View>
+      <AddFoodBottomSheet
+        ref={bottomSheetRef}
+        onClose={handleCloseModalPress}
+        actions={{
+          onCapture: handleCapture,
+          onUpload: handleUploadFromGallery,
+        }}
+      />
     </View>
   );
 }

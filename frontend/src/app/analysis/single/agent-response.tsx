@@ -1,4 +1,4 @@
-import { AnalysisAPiResponse } from '@/@types/analysis-api-response';
+import { SingleAnalysisAPiResponse } from '@/@types/single-analysis-api-response';
 import { baseURL } from '@/api';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
@@ -19,7 +19,7 @@ import { ScrollView, Text, View } from 'react-native';
 
 export default function AgentResponse() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
-  const [analysisResult, setAnalysisResult] = useState<AnalysisAPiResponse | null>(null); // Estado para o resultado final
+  const [analysisResult, setAnalysisResult] = useState<SingleAnalysisAPiResponse | null>(null); // Estado para o resultado final
   const [error, setError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +39,7 @@ export default function AgentResponse() {
 
       console.log(`end point: ${baseURL}/analysis/single`);
 
-      const { data } = await api.post<AnalysisAPiResponse>('/analysis/single', formData, {
+      const { data } = await api.post<SingleAnalysisAPiResponse>('/analysis/single', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -49,7 +49,7 @@ export default function AgentResponse() {
       console.log(`====> RECEIVED DATA: ${data}`);
 
       setAnalysisResult(data);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Erro ao enviar arquivo pra API:', e.message);
       setError('Falha na comunicação ou processamento da API.');
     } finally {
@@ -112,13 +112,13 @@ export default function AgentResponse() {
           <ScrollView
             contentContainerStyle={{ flexGrow: 0 }}
             className="flex w-full flex-grow-0 flex-col rounded-3xl bg-gray-200">
-            <Text allowFontScaling={false} className="px-6 pb-6 pt-6">
+            <Text allowFontScaling={false} className="px-6 pb-6 pt-6 font-regular">
               {analysisResult ? (
                 <Text
                   allowFontScaling={false}
                   style={{ fontSize: fs(16) }}
                   className="font-semiBold">
-                  {`ENN: ${analysisResult?.status === 'SUCESSO' ? analysisResult.enn : 'Inconsistente'}\n`}
+                  {`ENN: ${analysisResult?.status === 'SUCESSO' ? `${analysisResult.enns}%` : 'Inconsistente'}\n`}
                 </Text>
               ) : (
                 <Text allowFontScaling={false} style={{ color: colors.red.base }}>
@@ -130,10 +130,15 @@ export default function AgentResponse() {
             </Text>
             {analysisResult?.suggestion && (
               <View className="w-full border-t-[1px] border-t-gray-400 px-6 pb-6 pt-8">
-                <Text allowFontScaling={false} className=" font-semiBold">
+                <Text
+                  style={{ fontSize: fs(16) }}
+                  allowFontScaling={false}
+                  className="font-semiBold">
                   Sugestões:
                 </Text>
-                <Text allowFontScaling={false}>{analysisResult.suggestion}</Text>
+                <Text allowFontScaling={false} className="font-regular">
+                  {analysisResult.suggestion}
+                </Text>
               </View>
             )}
           </ScrollView>

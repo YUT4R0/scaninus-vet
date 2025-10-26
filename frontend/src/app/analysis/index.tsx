@@ -24,7 +24,7 @@ export default function Index() {
           title="Análise Simples"
           description="Será feita a análise de qualidade dedicada a uma ração."
           icon={IconTextScan2}
-          onPress={() => router.navigate('analysis/single')}
+          onPress={() => router.push('analysis/single')}
         />
         <AnalysisOption
           title="Análise Comparativa"

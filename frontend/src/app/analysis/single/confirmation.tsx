@@ -44,7 +44,10 @@ export default function Confirmation() {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      processNewPhoto(result);
+      const newUri = await processNewPhoto(result);
+      if (newUri) {
+        setCurrentUri(newUri);
+      }
     }
   };
 
@@ -58,11 +61,16 @@ export default function Confirmation() {
     let results = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 1,
-      allowsEditing: true,
-      aspect: [3, 4],
+      allowsEditing: false,
     });
+
     if (!results.canceled && results.assets && results.assets.length > 0) {
-      processNewPhoto(results);
+      const newUri = await processNewPhoto(results);
+      if (newUri) {
+        setCurrentUri(newUri);
+        setImageToEdit(newUri);
+        setIsCropScreenOpen(true);
+      }
     }
   };
 
@@ -82,7 +90,7 @@ export default function Confirmation() {
             to: newUri,
           });
 
-          setCurrentUri(newUri);
+          return newUri;
         }
       } catch (error) {
         console.error('Erro ao mover/salvar arquivo:', error);
@@ -92,8 +100,8 @@ export default function Confirmation() {
   };
 
   const handleEdit = async (uriToEdit: string) => {
-    setIsCropScreenOpen(true);
     setImageToEdit(uriToEdit);
+    setIsCropScreenOpen(true);
   };
 
   const handleEditingComplete = (result: EditedImageProps) => {

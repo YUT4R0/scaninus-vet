@@ -6,7 +6,9 @@ import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
+import CropScreen, { EditedImageProps } from '../_components/CropScreen';
 import SingleAnalysisSteps from './_components/SingleAnalysisSteps';
 
 export default function Index() {
@@ -14,16 +16,10 @@ export default function Index() {
   const [mediaLibraryPermission, requestMediaLibraryPermission] =
     ImagePicker.useMediaLibraryPermissions();
 
-  // const requestImagePickerPermissions = async () => {
-  //   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  //   if (status !== 'granted') {
-  //     alert('Permission to access media library is required!');
-  //     return false;
-  //   }
-  //   return true;
-  // };
+  const [isCropScreenOpen, setIsCropScreenOpen] = useState<boolean>(false);
+  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
 
-  const saveToCrop = async (result: ImagePicker.ImagePickerResult) => {
+  const handleSaving = async (result: ImagePicker.ImagePickerResult) => {
     if (!result.canceled) {
       try {
         const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`;
@@ -35,11 +31,7 @@ export default function Index() {
           to: newUri,
         });
 
-        const params = {
-          uri: newUri,
-          from: 'single-analysis',
-        };
-        router.navigate({ pathname: './single/confirmation', params });
+        return newUri;
       } catch (error) {
         console.error('Erro ao mover/salvar arquivo:', error);
         Alert.alert(
@@ -63,7 +55,24 @@ export default function Index() {
       cameraType: ImagePicker.CameraType.back,
     });
 
-    saveToCrop(result);
+    const newUri = await handleSaving(result);
+    if (newUri) {
+      const params = {
+        uri: newUri,
+      };
+      router.navigate({ pathname: './single/confirmation', params });
+    }
+  };
+
+  const handleEditingComplete = (result: EditedImageProps) => {
+    if (result.uri) {
+      const params = {
+        uri: result.uri,
+      };
+      setImageToEdit(null);
+      setIsCropScreenOpen(false);
+      router.navigate({ pathname: './single/confirmation', params });
+    }
   };
 
   const handleImageUpload = async () => {
@@ -77,16 +86,33 @@ export default function Index() {
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [3, 4],
       quality: 1,
     });
 
-    saveToCrop(result);
+    const newUri = await handleSaving(result);
+    if (newUri) {
+      setImageToEdit(newUri);
+      setIsCropScreenOpen(true);
+    }
   };
 
   const isReady = cameraPermission?.granted && mediaLibraryPermission?.granted;
   const renderPermissionView = !cameraPermission?.granted || !mediaLibraryPermission?.granted;
+
+  if (isCropScreenOpen && imageToEdit) {
+    return (
+      <CropScreen
+        onCancel={() => {
+          setIsCropScreenOpen(false);
+          setImageToEdit(null);
+        }}
+        onComplete={handleEditingComplete}
+        uri={imageToEdit}
+        key={imageToEdit}
+        isVisible={isCropScreenOpen}
+      />
+    );
+  }
 
   return (
     <View className="flex flex-1 flex-col justify-between p-10">

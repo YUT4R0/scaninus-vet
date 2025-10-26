@@ -12,15 +12,8 @@ export const SELECTION_LIMIT = 3;
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
-
-  const requestImagePickerPermissions = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permission to access media library is required!');
-      return false;
-    }
-    return true;
-  };
+  const [mediaLibraryPermission, requestMediaLibraryPermission] =
+    ImagePicker.useMediaLibraryPermissions();
 
   const handleSaving = async (result: ImagePicker.ImagePickerResult) => {
     if (!result.canceled || result.assets !== null) {
@@ -70,8 +63,13 @@ export default function Index() {
   };
 
   const handleImageUpload = async () => {
-    const hasPermission = await requestImagePickerPermissions();
-    if (!hasPermission) return;
+    if (!mediaLibraryPermission?.granted) {
+      const { granted } = await requestMediaLibraryPermission();
+      if (!granted) {
+        Alert.alert('Erro', 'Permissão de Galeria é obrigatória para fazer upload.');
+        return;
+      }
+    }
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -84,6 +82,9 @@ export default function Index() {
     handleSaving(result);
   };
 
+  const isReady = cameraPermission?.granted && mediaLibraryPermission?.granted;
+  const renderPermissionView = !cameraPermission?.granted || !mediaLibraryPermission?.granted;
+
   return (
     <View className="flex flex-1 flex-col justify-between p-10">
       <Text
@@ -94,7 +95,7 @@ export default function Index() {
       </Text>
       <ComparativeAnalysisSteps />
       <View className="mt-5 flex flex-col gap-2">
-        {!cameraPermission || !cameraPermission.granted ? (
+        {renderPermissionView ? (
           <View className="mx-auto mt-5 flex flex-col gap-2 rounded-2xl border-[1px] border-gray-400 bg-yellow-50 px-10 py-6">
             <Text
               allowFontScaling={false}
@@ -108,25 +109,32 @@ export default function Index() {
               className="text-center font-regular">
               Acesso à Câmera é obrigatório para escanear rótulos.
             </Text>
-            <Button style={{ backgroundColor: colors.blue.dark }} onPress={handleCapture}>
+            <Button
+              style={{ backgroundColor: colors.blue.dark }}
+              onPress={() => {
+                requestCameraPermission();
+                requestMediaLibraryPermission();
+              }}>
               <Button.Title>Conceder Permissão</Button.Title>
               <Button.Icon icon={IconCamera} />
             </Button>
           </View>
         ) : (
-          <>
-            <Button style={{ backgroundColor: colors.blue.base }} onPress={handleCapture}>
-              <Button.Icon icon={IconCamera} />
-              <Button.Title>Iniciar Captura</Button.Title>
-            </Button>
-            <Text allowFontScaling={false} className="text-center font-regular">
-              ou
-            </Text>
-            <Button style={{ backgroundColor: colors.green.light }} onPress={handleImageUpload}>
-              <Button.Icon icon={IconUpload} />
-              <Button.Title>Fazer Upload</Button.Title>
-            </Button>
-          </>
+          isReady && (
+            <>
+              <Button style={{ backgroundColor: colors.blue.base }} onPress={handleCapture}>
+                <Button.Icon icon={IconCamera} />
+                <Button.Title>Iniciar Captura</Button.Title>
+              </Button>
+              <Text allowFontScaling={false} className="text-center font-regular">
+                ou
+              </Text>
+              <Button style={{ backgroundColor: colors.green.light }} onPress={handleImageUpload}>
+                <Button.Icon icon={IconUpload} />
+                <Button.Title>Fazer Upload</Button.Title>
+              </Button>
+            </>
+          )
         )}
       </View>
     </View>

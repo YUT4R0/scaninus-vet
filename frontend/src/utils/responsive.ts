@@ -1,8 +1,11 @@
 import { Dimensions, PixelRatio } from 'react-native';
 
+export const SCREEN_WIDTH = Dimensions.get('window').width;
+export const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 // Largura de referência do seu dispositivo de desenvolvimento (Poco X6 Pro DP width é aprox. 393)
 const DESIGN_WIDTH = 393;
-const scale = Dimensions.get('window').width / DESIGN_WIDTH;
+const scale = SCREEN_WIDTH / DESIGN_WIDTH;
 
 /**
  * Escala uma unidade (como tamanho de fonte) baseada na largura da tela.

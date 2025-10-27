@@ -4,6 +4,7 @@ import { fs } from '@/utils/responsive';
 import { useLocalSearchParams } from 'expo-router';
 import { Image, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import AnalysisVariablesChart from './_components/AnalysisVariablesChart';
 import { colorMap } from './_components/SingleAnalysisHistoryCard';
 
 export default function AnalysisId() {
@@ -49,9 +50,12 @@ export default function AnalysisId() {
             />
           </View>
         </View>
-        <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="font-medium">
-          ENN Calculado: {analysis.enn ? `${analysis.enn}%` : 'Indeterminado'}
-        </Text>
+        <View className="flex w-full flex-col justify-center">
+          <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="font-medium">
+            Proporção dos Valores:
+          </Text>
+          <AnalysisVariablesChart enn={analysis.enn} variables={analysis.variables} />
+        </View>
         <View className="flex w-full flex-1 flex-col gap-1">
           <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="font-medium">
             Descrição:

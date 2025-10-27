@@ -56,7 +56,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
-    // Adiciona uma sombra básica para melhor UX
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

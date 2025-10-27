@@ -11,27 +11,16 @@ import {
   IconFaceIdError,
   IconHome2,
   IconRobotFace,
-  IconX,
 } from '@tabler/icons-react-native';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
 
 import { SingleAnalysisHistory, useSingleAnalysisStore } from '@/store/single-analysis';
 import { ANALYSIS_HISTORY_LIMIT } from '../..';
+import SaveAnalysisForm from './_components/SaveAnalysisForm';
 
 export default function AgentResponse() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
@@ -87,12 +76,11 @@ export default function AgentResponse() {
       [
         {
           text: 'Continuar análise',
-          onPress: () => {
-            return;
-          },
+          style: 'cancel',
         },
         {
           text: 'Cancelar análise',
+          style: 'destructive',
           onPress: handleExit,
         },
       ],
@@ -186,47 +174,6 @@ export default function AgentResponse() {
       handleSend(uri);
     }
   }, [uri, isLoading]);
-
-  const renderNameModal = () => (
-    <Modal
-      transparent={true}
-      visible={isModalVisible}
-      onRequestClose={() => setIsModalVisible(false)}>
-      <View style={modalStyles.centeredView}>
-        <View style={modalStyles.modalView}>
-          <View className="mb-5 w-full flex-row items-center justify-between">
-            <Text style={modalStyles.modalTitle}>Salvar Análise</Text>
-            <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <IconX size={24} color={colors.gray[600]} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={modalStyles.label}>Nome da análise:</Text>
-          <TextInput
-            style={modalStyles.input}
-            onChangeText={setAnalysisTitle}
-            value={analysisTitle}
-            placeholder="Ex: Ração Teste Premium"
-            maxLength={50}
-            keyboardType="default"
-          />
-
-          <View className="mt-8 w-full flex-row justify-between">
-            <Button
-              onPress={() => setIsModalVisible(false)}
-              style={{ backgroundColor: colors.gray[500], width: '45%' }}>
-              <Button.Title>Cancelar</Button.Title>
-            </Button>
-            <Button
-              onPress={handleFinalSaving}
-              style={{ backgroundColor: colors.green.base, width: '45%' }}>
-              <Button.Title>Salvar</Button.Title>
-            </Button>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
 
   return (
     <View className="flex flex-1 flex-col justify-between gap-4 p-10">
@@ -353,13 +300,13 @@ export default function AgentResponse() {
           {analysisResult && (
             <View className="mb-10 flex w-full flex-row items-center justify-between">
               <Button
-                onPress={() => router.replace({ pathname: '/analysis/single/new' })}
+                onPress={handleNewAnalysis}
                 style={{ backgroundColor: colors.blue.base, width: '30%' }}>
                 <Button.Icon icon={IconCamera} />
                 <Button.Title>Nova</Button.Title>
               </Button>
               <Button
-                onPress={() => router.replace({ pathname: '/analysis' })}
+                onPress={handleExit}
                 style={{ backgroundColor: colors.gray[500], width: '30%' }}>
                 <Button.Icon icon={IconHome2} />
                 <Button.Title>Home</Button.Title>
@@ -407,54 +354,17 @@ export default function AgentResponse() {
           )}
         </View>
       </View>
-      {renderNameModal()}
+      <SaveAnalysisForm
+        modal={{
+          isOpen: isModalVisible,
+          onClose: () => setIsModalVisible(false),
+          onSave: handleFinalSaving,
+        }}
+        fields={{
+          title: analysisTitle,
+          setTitle: setAnalysisTitle,
+        }}
+      />
     </View>
   );
 }
-
-const modalStyles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo escuro
-  },
-  modalView: {
-    width: '85%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: fs(20),
-    fontWeight: 'bold',
-    color: colors.gray[600],
-  },
-  label: {
-    alignSelf: 'flex-start',
-    fontSize: fs(14),
-    fontWeight: '500',
-    marginBottom: 5,
-    color: colors.gray[600],
-  },
-  input: {
-    width: '100%',
-    height: 45,
-    backgroundColor: colors.gray[100],
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    fontSize: fs(16),
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-  },
-});

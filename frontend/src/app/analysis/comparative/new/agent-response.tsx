@@ -7,12 +7,11 @@ import { fs } from '@/utils/responsive';
 import {
   IconCamera,
   IconCancel,
-  IconDeviceFloppy,
   IconFaceIdError,
   IconHome2,
   IconRobotFace,
 } from '@tabler/icons-react-native';
-import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
+import * as FileSystem from 'expo-file-system';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
@@ -80,27 +79,34 @@ export default function AgentResponse() {
       [
         {
           text: 'Continuar análise',
-          onPress: () => {
-            return;
-          },
+          style: 'cancel',
         },
         {
           text: 'Cancelar análise',
-          onPress: async () => {
-            try {
-              await Promise.all(
-                sentUris.map((u) => FileSystem.deleteAsync(u, { idempotent: true }))
-              );
-            } catch (e) {
-              console.warn('Erro ao deletar arquivo:', e);
-            } finally {
-              router.replace({ pathname: '/analysis' });
-            }
-          },
+          onPress: handleExit,
+          style: 'destructive',
         },
       ],
       { cancelable: true }
     );
+  };
+
+  const clearTempFiles = async (urisToClear: string[]) => {
+    try {
+      await Promise.all(urisToClear.map((u) => FileSystem.deleteAsync(u, { idempotent: true })));
+    } catch (e) {
+      console.warn('Erro ao deletar arquivo:', e);
+    }
+  };
+
+  const handleExit = async () => {
+    await clearTempFiles(sentUris);
+    router.replace({ pathname: '/analysis' });
+  };
+
+  const handleNewAnalysis = async () => {
+    await clearTempFiles(sentUris);
+    router.replace({ pathname: '/analysis/comparative/new' });
   };
 
   useEffect(() => {
@@ -303,30 +309,30 @@ export default function AgentResponse() {
           {analysisResult && (
             <View className="mb-10 flex w-full flex-row items-center justify-between">
               <Button
-                onPress={() => router.replace({ pathname: '/analysis/comparative/new' })}
-                style={{ backgroundColor: colors.blue.base, width: '30%' }}>
+                onPress={handleNewAnalysis}
+                style={{ backgroundColor: colors.blue.base, width: '40%' }}>
                 <Button.Icon icon={IconCamera} />
                 <Button.Title>Nova</Button.Title>
               </Button>
               <Button
-                onPress={() => router.replace({ pathname: '/analysis' })}
-                style={{ backgroundColor: colors.gray[500], width: '30%' }}>
+                onPress={handleExit}
+                style={{ backgroundColor: colors.gray[500], width: '40%' }}>
                 <Button.Icon icon={IconHome2} />
                 <Button.Title>Home</Button.Title>
               </Button>
-              <Button
+              {/* <Button
                 onPress={() => router.replace({ pathname: '/analysis/comparative/history' })}
                 style={{ backgroundColor: colors.green.light, width: '30%' }}>
                 <Button.Icon icon={IconDeviceFloppy} />
                 <Button.Title>Salvar</Button.Title>
-              </Button>
+              </Button> */}
             </View>
           )}
         </ScrollView>
         <View className="flex w-full flex-row items-center justify-center gap-6">
           {isLoading ? (
             <Button
-              onPress={() => handleCancel}
+              onPress={handleCancel}
               style={{ backgroundColor: colors.red.base, width: '50%' }}>
               <Button.Icon icon={IconCancel} />
               <Button.Title>Cancelar</Button.Title>
@@ -335,13 +341,13 @@ export default function AgentResponse() {
             !analysisResult && (
               <>
                 <Button
-                  onPress={() => router.replace({ pathname: '/analysis' })}
+                  onPress={handleExit}
                   style={{ backgroundColor: colors.gray[500], width: '46%' }}>
                   <Button.Icon icon={IconHome2} />
                   <Button.Title>Home</Button.Title>
                 </Button>
                 <Button
-                  onPress={() => router.replace({ pathname: '/analysis/comparative/new' })}
+                  onPress={handleNewAnalysis}
                   style={{ backgroundColor: colors.blue.base, width: '46%' }}>
                   <Button.Icon icon={IconCamera} />
                   <Button.Title>Nova Análise</Button.Title>

@@ -18,6 +18,7 @@ export type SingleAnalysisHistory = {
 interface SingleAnalysisState {
   singleAnalyses: SingleAnalysisHistory[];
   addAnalysis: (analysis: SingleAnalysisHistory) => void;
+  removeAnalysis: (analysisId: string) => void;
 }
 
 export const useSingleAnalysisStore = create<SingleAnalysisState>()(
@@ -28,6 +29,11 @@ export const useSingleAnalysisStore = create<SingleAnalysisState>()(
       addAnalysis: (analysis) => {
         set((state) => ({
           singleAnalyses: [analysis, ...state.singleAnalyses],
+        }));
+      },
+      removeAnalysis: (analysisId) => {
+        set((state) => ({
+          singleAnalyses: state.singleAnalyses.filter((analysis) => analysis.id !== analysisId),
         }));
       },
     }),

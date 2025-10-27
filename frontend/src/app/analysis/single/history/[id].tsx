@@ -1,17 +1,58 @@
+import { Button } from '@/components/Button';
 import { useSingleAnalysisStore } from '@/store/single-analysis';
+import { colors } from '@/styles/colors';
 import { formatDate } from '@/utils/date-format';
 import { fs } from '@/utils/responsive';
-import { useLocalSearchParams } from 'expo-router';
-import { Image, Text, View } from 'react-native';
+import { IconTrash } from '@tabler/icons-react-native';
+import * as FileSystem from 'expo-file-system';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Alert, Image, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import AnalysisVariablesChart from './_components/AnalysisVariablesChart';
 import { colorMap } from './_components/SingleAnalysisHistoryCard';
 
 export default function AnalysisId() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const analysis = useSingleAnalysisStore((state) => state.singleAnalyses).filter(
-    (analysis) => analysis.id === id
-  )[0];
+  const analysis = useSingleAnalysisStore((state) => state.singleAnalyses).find((a) => a.id === id);
+  const removeAnalysisFromStore = useSingleAnalysisStore((state) => state.removeAnalysis);
+
+  if (!analysis) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <Text style={{ fontSize: fs(18) }}>Análise não encontrada.</Text>
+      </View>
+    );
+  }
+
+  const handleExcludeAnalysis = async () => {
+    Alert.alert(
+      'Excluir Análise',
+      `Você tem certeza que deseja excluir o histórico da análise "${analysis.title}" permanetemente?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (analysis.image_uri) {
+                await FileSystem.deleteAsync(analysis.image_uri, { idempotent: true });
+              }
+              removeAnalysisFromStore(analysis.id);
+              router.replace('/analysis/single/history');
+            } catch (error) {
+              console.error('Erro fatal ao excluir análise:', error);
+              Alert.alert('Erro', 'Não foi possível excluir o registro ou o arquivo físico.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View className="flex-1 px-10 pb-10">
@@ -79,6 +120,12 @@ export default function AnalysisId() {
               {analysis.suggestion}
             </Text>
           </View>
+        </View>
+        <View>
+          <Button onPress={handleExcludeAnalysis} style={{ backgroundColor: colors.red.base }}>
+            <Button.Icon icon={IconTrash} />
+            <Button.Title>Excluir Análise</Button.Title>
+          </Button>
         </View>
       </ScrollView>
     </View>

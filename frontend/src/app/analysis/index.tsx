@@ -1,13 +1,15 @@
 import { useSingleAnalysisStore } from '@/store/single-analysis';
+import { colors } from '@/styles/colors';
 import { fs } from '@/utils/responsive';
 import {
   IconCirclePlus,
   IconHistory,
+  IconInfoCircle,
   IconLayersDifference,
   IconTextScan2,
 } from '@tabler/icons-react-native';
 import { router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import AnalysisHistoryOption from './_components/AnalysisHistoryOption';
 import AnalysisOption from './_components/AnalysisOption';
 
@@ -30,11 +32,16 @@ export default function Index() {
         </Text>
       </View>
       <View className="flex w-full flex-col items-start justify-center gap-4">
-        <View className="flex w-full flex-row items-center gap-2 border-b border-b-gray-400">
-          <IconCirclePlus size={22} />
-          <Text allowFontScaling={false} style={{ fontSize: fs(18) }} className=" font-semiBold">
-            Nova Análise
-          </Text>
+        <View className="flex w-full flex-row items-center justify-between border-b border-b-gray-400">
+          <View className="flex flex-row items-center gap-4">
+            <IconCirclePlus size={22} />
+            <Text allowFontScaling={false} style={{ fontSize: fs(18) }} className=" font-semiBold">
+              Nova Análise
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => router.navigate('/analysis/info')}>
+            <IconInfoCircle size={22} color={colors.blue.light} />
+          </TouchableOpacity>
         </View>
         <View className="flex w-full flex-col justify-center gap-8">
           <AnalysisOption
@@ -66,8 +73,15 @@ export default function Index() {
           />
           <AnalysisHistoryOption
             label="Análises Comparativas"
+            activeOpacity={0.8}
             amountAnalysis={0}
-            onPress={() => router.push('analysis/comparative/history')}
+            // onPress={() => router.push('analysis/comparative/history')}
+            onPress={() =>
+              Alert.alert(
+                'Para Assinantes.',
+                'Assine o plano Scani+ para ter acesso aos históricos de suas análises comparativas.'
+              )
+            }
           />
         </View>
       </View>

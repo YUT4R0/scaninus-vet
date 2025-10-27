@@ -37,6 +37,7 @@ export default function Layot() {
             }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="analysis/index" options={{ headerShown: false }} />
+            <Stack.Screen name="analysis/info" options={{ headerShown: false }} />
             <Stack.Screen
               name="analysis/single/new/confirmation"
               options={{ headerShown: false }}

@@ -11,9 +11,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { SELECTION_LIMIT } from '.';
-import AddFoodBottomSheet from '../_components/AddFoodBottomSheet';
-import CropScreen, { EditedImageProps } from '../_components/CropScreen';
-import ImageCard from '../_components/ImageCard';
+import AddFoodBottomSheet from '../../_components/AddFoodBottomSheet';
+import CropScreen, { EditedImageProps } from '../../_components/CropScreen';
+import ImageCard from '../../_components/ImageCard';
 
 const MAX_SIZE_BYTES = 1 * 1024 * 1024; // 1 MB
 
@@ -193,11 +193,34 @@ export default function Confirmation() {
   };
 
   const handleCancelAll = async () => {
-    const deletePromises = currentUris.map((uri) =>
-      FileSystem.deleteAsync(uri, { idempotent: true })
+    Alert.alert(
+      'Cancelar Preparação',
+      'Você tem certeza que deseja cancelar a preparação (as alterações não serão salvas)?',
+      [
+        {
+          text: 'Não',
+          onPress: () => {
+            return;
+          },
+        },
+        {
+          text: 'Sim',
+          onPress: async () => {
+            try {
+              const deletePromises = currentUris.map((uri) =>
+                FileSystem.deleteAsync(uri, { idempotent: true })
+              );
+              await Promise.all(deletePromises);
+            } catch (e) {
+              console.warn('Erro ao deletar arquivo após cancelamento:', e);
+            } finally {
+              router.replace('/analysis');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
     );
-    await Promise.all(deletePromises);
-    router.replace('/analysis');
   };
 
   const handleSendBatch = async () => {

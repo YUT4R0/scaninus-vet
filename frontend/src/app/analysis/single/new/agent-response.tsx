@@ -1,4 +1,4 @@
-import { ComparativeAnalysisAPiResponse } from '@/@types/comparative-analysis-api-response';
+import { SingleAnalysisAPiResponse } from '@/@types/single-analysis-api-response';
 import { baseURL } from '@/api';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
@@ -18,44 +18,33 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
 
 export default function AgentResponse() {
-  const { uris: urisParam } = useLocalSearchParams<{ uris: string | string[] }>();
-
-  const [analysisResult, setAnalysisResult] = useState<ComparativeAnalysisAPiResponse | null>(null);
+  const { uri } = useLocalSearchParams<{ uri: string }>();
+  const [analysisResult, setAnalysisResult] = useState<SingleAnalysisAPiResponse | null>(null); // Estado para o resultado final
   const [error, setError] = useState<string | null>(null);
-  const [sentUris, setSentUris] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleSend = async (filesUris: string[]) => {
+  const handleSend = async (fileUri: string) => {
+    setIsLoading(true);
     setError(null);
-
     try {
       const formData = new FormData();
-      filesUris.forEach((uri, i) => {
-        const filename = uri.split('/').pop() ?? `analysis_image_${i}.jpg`;
-        const fileLabel = `image_${i + 1}`;
+      const filename = fileUri.split('/').pop() || 'analysis_image.jpg';
 
-        formData.append(fileLabel, {
-          uri,
-          name: filename,
-          type: 'image/jpeg',
-        } as any);
+      formData.append('image', {
+        uri: fileUri,
+        type: 'image/jpeg',
+        name: filename,
+      } as any);
+
+      console.log(`end point: ${baseURL}/analysis/single`);
+
+      const { data } = await api.post<SingleAnalysisAPiResponse>('/analysis/single', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 1000 * 90,
       });
-
-      console.log(`endpoint: ${baseURL}/analysis/comparative`);
-
-      setIsLoading(true);
-      setSentUris(filesUris);
-      const { data } = await api.post<ComparativeAnalysisAPiResponse>(
-        '/analysis/comparative',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          timeout: 1000 * 90 * filesUris.length,
-        }
-      );
 
       console.log(`====> RECEIVED DATA: ${data}`);
 
@@ -65,7 +54,7 @@ export default function AgentResponse() {
       setError('Falha na comunicação ou processamento da API.');
     } finally {
       try {
-        await Promise.all(filesUris.map((u) => FileSystem.deleteAsync(u, { idempotent: true })));
+        await FileSystem.deleteAsync(fileUri, { idempotent: true });
       } catch (e) {
         console.warn('Erro ao deletar arquivo após envio:', e);
       }
@@ -88,9 +77,7 @@ export default function AgentResponse() {
           text: 'Cancelar análise',
           onPress: async () => {
             try {
-              await Promise.all(
-                sentUris.map((u) => FileSystem.deleteAsync(u, { idempotent: true }))
-              );
+              await FileSystem.deleteAsync(uri, { idempotent: true });
             } catch (e) {
               console.warn('Erro ao deletar arquivo:', e);
             } finally {
@@ -104,17 +91,10 @@ export default function AgentResponse() {
   };
 
   useEffect(() => {
-    if (urisParam && isLoading) {
-      const urisToSend = Array.isArray(urisParam)
-        ? urisParam
-        : urisParam
-          ? urisParam.split(',')
-          : [];
-      if (urisToSend.length > 1) {
-        handleSend(urisToSend);
-      }
+    if (uri && isLoading) {
+      handleSend(uri);
     }
-  }, [urisParam, isLoading]);
+  }, [uri, isLoading]);
 
   return (
     <View className="flex flex-1 flex-col justify-between gap-4 p-10">
@@ -123,35 +103,31 @@ export default function AgentResponse() {
           allowFontScaling={false}
           style={{ fontSize: fs(20) }}
           className="text-center font-medium text-gray-400">
-          Resultado da Análise Comparativa
+          Resultado da Análise Simples
         </Text>
       </View>
       <Text
         allowFontScaling={false}
-        style={{
-          fontSize: fs(25),
-          color: analysisResult?.status === 'IMPRECISA' ? colors.red.base : 'black',
-        }}
+        style={{ fontSize: fs(25) }}
         className="text-center font-regular">
-        {urisParam && isLoading
+        {uri && isLoading
           ? 'Analisando...'
           : error
             ? 'Houve um erro interno'
-            : analysisResult?.response_title +
-              (analysisResult?.status === 'IMPRECISA' ? ' (imprecisa)' : '')}
+            : analysisResult?.response_title}
       </Text>
       <Text
         allowFontScaling={false}
         style={{ fontSize: fs(14) }}
         className="text-center font-regular leading-5">
-        {urisParam && isLoading
+        {uri && isLoading
           ? 'Isso pode levar alguns segundos'
           : error
             ? error
             : 'Veja o resultado abaixo'}
       </Text>
 
-      <View className="mt-4 flex h-full w-full flex-1 flex-col items-center justify-start">
+      <View className="mt-4 flex w-full flex-1 flex-col items-center justify-start">
         {isLoading || analysisResult?.status === 'SUCESSO' ? (
           <IconRobotFace size={40} color={colors.gray[400]} />
         ) : (
@@ -169,35 +145,21 @@ export default function AgentResponse() {
               elevation: 3,
             }}>
             <Text allowFontScaling={false} style={{ fontSize: fs(16) }} className="font-medium">
-              Compare as seguintes rações:
+              Analise a seguinte ração:
             </Text>
-            <View className="flex w-full flex-row items-center gap-2">
-              {sentUris.map((uri, i) => (
-                <View key={i} className="flex flex-col items-center">
-                  <Text allowFontScaling={false} className="font-regular">
-                    Ração {i + 1}
-                  </Text>
-                  <View
-                    style={{
-                      borderRadius: 12,
-                      elevation: 6,
-                      backgroundColor: 'transparent',
-                    }}>
-                    <Image
-                      source={{ uri }}
-                      style={{
-                        height: 64,
-                        width: 64,
-                        borderRadius: 12,
-                        backgroundColor: '#5d5b5b',
-                        borderWidth: 2,
-                        borderColor: colors.green.light,
-                      }}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              ))}
+            <View style={{ elevation: 6, borderRadius: 12 }}>
+              <Image
+                source={{ uri }}
+                style={{
+                  height: 64,
+                  width: 64,
+                  borderRadius: 12,
+                  backgroundColor: '#5d5b5b',
+                  borderWidth: 2,
+                  borderColor: colors.green.light,
+                }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           {/* SEGUNDA MENSAGEM SEM CONTEUDO */}
@@ -230,7 +192,7 @@ export default function AgentResponse() {
                     allowFontScaling={false}
                     style={{ fontSize: fs(16) }}
                     className="font-semiBold">
-                    {`Resumo:\n`}
+                    {`ENN: ${analysisResult?.status === 'SUCESSO' ? `${analysisResult.enn}%` : 'Inconsistente'}\n`}
                   </Text>
                 ) : (
                   <Text allowFontScaling={false} style={{ color: colors.red.base }}>
@@ -240,50 +202,6 @@ export default function AgentResponse() {
                 )}
                 {analysisResult?.description}
               </Text>
-
-              {analysisResult?.details && (
-                <View className="flex w-full border-t-[1px] border-t-gray-400 px-6 pb-6 pt-8">
-                  <Text
-                    allowFontScaling={false}
-                    style={{ fontSize: fs(16) }}
-                    className="font-semiBold">
-                    {`Comparativo:\n`}
-                  </Text>
-                  {analysisResult?.details.map((analysis, i) => (
-                    <View
-                      key={i}
-                      className={`${i < analysisResult.details!.length - 1 && 'mb-4 border-b-[1px] border-dashed border-b-gray-400 pb-4'}`}>
-                      <Text
-                        allowFontScaling={false}
-                        style={{ fontSize: fs(14) }}
-                        className="mb-2 text-center font-semiBold uppercase">
-                        {analysis.name}{' '}
-                        <Text className="font-regular italic">
-                          (ENN: {analysis.enn ? `${analysis.enn}%` : 'Indeterminado'})
-                        </Text>
-                      </Text>
-                      <Text
-                        allowFontScaling={false}
-                        style={{ fontSize: fs(14) }}
-                        className="font-medium">
-                        Descrição:
-                      </Text>
-                      <Text allowFontScaling={false} className="font-regular">
-                        {analysis.description}
-                      </Text>
-                      <Text
-                        allowFontScaling={false}
-                        style={{ fontSize: fs(14) }}
-                        className="mt-2 font-medium">
-                        Recomendação:
-                      </Text>
-                      <Text allowFontScaling={false} className="font-regular">
-                        {analysis.suggestion}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
 
               {analysisResult?.suggestion && (
                 <View className="w-full border-t-[1px] border-t-gray-400 px-6 pb-6 pt-8">
@@ -303,7 +221,7 @@ export default function AgentResponse() {
           {analysisResult && (
             <View className="mb-10 flex w-full flex-row items-center justify-between">
               <Button
-                onPress={() => router.replace({ pathname: '/analysis' })}
+                onPress={() => router.replace({ pathname: '/analysis/single/new' })}
                 style={{ backgroundColor: colors.blue.base, width: '30%' }}>
                 <Button.Icon icon={IconCamera} />
                 <Button.Title>Nova</Button.Title>
@@ -315,7 +233,7 @@ export default function AgentResponse() {
                 <Button.Title>Home</Button.Title>
               </Button>
               <Button
-                onPress={() => router.replace({ pathname: '/analysis' })}
+                onPress={() => router.replace({ pathname: '/analysis/single/history' })}
                 style={{ backgroundColor: colors.green.light, width: '30%' }}>
                 <Button.Icon icon={IconDeviceFloppy} />
                 <Button.Title>Salvar</Button.Title>
@@ -341,7 +259,7 @@ export default function AgentResponse() {
                   <Button.Title>Home</Button.Title>
                 </Button>
                 <Button
-                  onPress={() => router.replace({ pathname: '/analysis' })}
+                  onPress={() => router.replace({ pathname: '/analysis/single/new' })}
                   style={{ backgroundColor: colors.blue.base, width: '46%' }}>
                   <Button.Icon icon={IconCamera} />
                   <Button.Title>Nova Análise</Button.Title>

@@ -4,34 +4,38 @@ import { fs } from '@/utils/responsive';
 import { IconCamera, IconUpload } from '@tabler/icons-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import CropScreen, { EditedImageProps } from '../_components/CropScreen';
-import SingleAnalysisSteps from './_components/SingleAnalysisSteps';
+import ComparativeAnalysisSteps from './_components/ComparativeAnalysisSteps';
+
+export const SELECTION_LIMIT = 3;
 
 export default function Index() {
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
   const [mediaLibraryPermission, requestMediaLibraryPermission] =
     ImagePicker.useMediaLibraryPermissions();
 
-  const [isCropScreenOpen, setIsCropScreenOpen] = useState<boolean>(false);
-  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
-
   const handleSaving = async (result: ImagePicker.ImagePickerResult) => {
-    if (!result.canceled) {
+    if (!result.canceled || result.assets !== null) {
       try {
-        const TEMP_FILE_NAME = `image_crop_${Date.now()}.jpg`;
-        const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
+        const uris: string[] = [];
+        for (const [i, img] of result.assets.entries()) {
+          const TEMP_FILE_NAME = `image_crop_${Date.now()}_${Math.random().toString(26).substring(2, 9)}_${i}.jpg`;
 
-        await FileSystem.deleteAsync(newUri, { idempotent: true });
-        await FileSystem.moveAsync({
-          from: result.assets[0].uri,
-          to: newUri,
+          const newUri = FileSystem.documentDirectory + TEMP_FILE_NAME;
+
+          await FileSystem.deleteAsync(newUri, { idempotent: true });
+          await FileSystem.copyAsync({
+            from: img.uri,
+            to: newUri,
+          });
+
+          uris.push(newUri);
+        }
+        router.navigate({
+          pathname: './new/confirmation',
+          params: { uris: uris.join(',') },
         });
-
-        return newUri;
       } catch (error) {
         console.error('Erro ao mover/salvar arquivo:', error);
         Alert.alert(
@@ -55,24 +59,7 @@ export default function Index() {
       cameraType: ImagePicker.CameraType.back,
     });
 
-    const newUri = await handleSaving(result);
-    if (newUri) {
-      const params = {
-        uri: newUri,
-      };
-      router.navigate({ pathname: './single/confirmation', params });
-    }
-  };
-
-  const handleEditingComplete = (result: EditedImageProps) => {
-    if (result.uri) {
-      const params = {
-        uri: result.uri,
-      };
-      setImageToEdit(null);
-      setIsCropScreenOpen(false);
-      router.navigate({ pathname: './single/confirmation', params });
-    }
+    handleSaving(result);
   };
 
   const handleImageUpload = async () => {
@@ -87,32 +74,16 @@ export default function Index() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 1,
+      allowsMultipleSelection: true,
+      aspect: [3, 4],
+      selectionLimit: SELECTION_LIMIT,
     });
 
-    const newUri = await handleSaving(result);
-    if (newUri) {
-      setImageToEdit(newUri);
-      setIsCropScreenOpen(true);
-    }
+    handleSaving(result);
   };
 
   const isReady = cameraPermission?.granted && mediaLibraryPermission?.granted;
   const renderPermissionView = !cameraPermission?.granted || !mediaLibraryPermission?.granted;
-
-  if (isCropScreenOpen && imageToEdit) {
-    return (
-      <CropScreen
-        onCancel={() => {
-          setIsCropScreenOpen(false);
-          setImageToEdit(null);
-        }}
-        onComplete={handleEditingComplete}
-        uri={imageToEdit}
-        key={imageToEdit}
-        isVisible={isCropScreenOpen}
-      />
-    );
-  }
 
   return (
     <View className="flex flex-1 flex-col justify-between p-10">
@@ -122,10 +93,10 @@ export default function Index() {
         className="text-center font-regular">
         Siga as Instruções
       </Text>
-      <SingleAnalysisSteps />
+      <ComparativeAnalysisSteps />
       <View className="mt-5 flex flex-col gap-2">
         {renderPermissionView ? (
-          <View className="mx-auto flex flex-col gap-2 rounded-2xl border-[1px] border-gray-400 bg-yellow-50 px-10 py-6">
+          <View className="mx-auto mt-5 flex flex-col gap-2 rounded-2xl border-[1px] border-gray-400 bg-yellow-50 px-10 py-6">
             <Text
               allowFontScaling={false}
               style={{ fontSize: fs(12) }}

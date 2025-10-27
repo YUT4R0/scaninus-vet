@@ -10,9 +10,9 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import AddFoodBottomSheet from '../_components/AddFoodBottomSheet';
-import CropScreen, { EditedImageProps } from '../_components/CropScreen';
-import ImageCard from '../_components/ImageCard';
+import AddFoodBottomSheet from '../../_components/AddFoodBottomSheet';
+import CropScreen, { EditedImageProps } from '../../_components/CropScreen';
+import ImageCard from '../../_components/ImageCard';
 const MAX_SIZE_BYTES = 1 * 1024 * 1024;
 
 export default function Confirmation() {
@@ -113,14 +113,33 @@ export default function Confirmation() {
   };
 
   const handleCancel = async () => {
-    try {
-      if (currentUri) {
-        await FileSystem.deleteAsync(currentUri, { idempotent: true });
-      }
-    } catch (e) {
-      console.warn('Erro ao deletar arquivo após cancelamento:', e);
-    }
-    router.replace('/analysis');
+    Alert.alert(
+      'Cancelar Preparação',
+      'Você tem certeza que deseja cancelar a preparação (as alterações não serão salvas)?',
+      [
+        {
+          text: 'Não',
+          onPress: () => {
+            return;
+          },
+        },
+        {
+          text: 'Sim',
+          onPress: async () => {
+            try {
+              if (currentUri) {
+                await FileSystem.deleteAsync(currentUri, { idempotent: true });
+              }
+            } catch (e) {
+              console.warn('Erro ao deletar arquivo após cancelamento:', e);
+            } finally {
+              router.replace('/analysis');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const compressImage = async (uriToCompress: string) => {

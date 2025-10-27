@@ -1,37 +1,70 @@
 import { fs } from '@/utils/responsive';
-import { IconLayersDifference, IconTextScan2 } from '@tabler/icons-react-native';
+import {
+  IconCirclePlus,
+  IconHistory,
+  IconLayersDifference,
+  IconTextScan2,
+} from '@tabler/icons-react-native';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
+import AnalysisHistoryOption from './_components/AnalysisHistoryOption';
 import AnalysisOption from './_components/AnalysisOption';
 
 export default function Index() {
   return (
-    <View className="flex-1 gap-12 px-10 py-16">
-      <View className="flex items-center justify-center gap-4">
-        <Text allowFontScaling={false} style={{ fontSize: fs(28) }} className="font-regular">
-          Qual tipo de Análise deseja fazer?
+    <View className="w-full flex-1 gap-8 p-10">
+      <View className="flex items-start justify-center gap-2">
+        <Text allowFontScaling={false} style={{ fontSize: fs(32) }} className="font-medium">
+          Seja bem vindo, tutor.
         </Text>
         <Text
           allowFontScaling={false}
-          style={{ fontSize: fs(14) }}
-          className="font-regular leading-6">
+          style={{ fontSize: fs(12) }}
+          className="font-regular leading-5">
           Antes de começar, certifique-se de habilidar o uso da câmera durante o uso da aplicação.
         </Text>
       </View>
-
-      <View className="flex flex-col justify-center gap-8">
-        <AnalysisOption
-          title="Análise Simples"
-          description="Será feita a análise de qualidade dedicada a uma ração."
-          icon={IconTextScan2}
-          onPress={() => router.push('analysis/single')}
-        />
-        <AnalysisOption
-          title="Análise Comparativa"
-          description="Será feita uma análise comparativa de qualidade entre duas ou mais rações."
-          icon={IconLayersDifference}
-          onPress={() => router.push('analysis/comparative')}
-        />
+      <View className="flex w-full flex-col items-start justify-center gap-4">
+        <View className="flex w-full flex-row items-center gap-2 border-b border-b-gray-400">
+          <IconCirclePlus size={22} />
+          <Text allowFontScaling={false} style={{ fontSize: fs(18) }} className=" font-semiBold">
+            Nova Análise
+          </Text>
+        </View>
+        <View className="flex w-full flex-col justify-center gap-8">
+          <AnalysisOption
+            title="Análise Simples"
+            description="Será feita a análise de qualidade dedicada a uma ração."
+            icon={IconTextScan2}
+            onPress={() => router.push('analysis/single/new')}
+          />
+          <AnalysisOption
+            title="Análise Comparativa"
+            description="Será feita uma análise comparativa de qualidade entre duas ou mais rações."
+            icon={IconLayersDifference}
+            onPress={() => router.push('analysis/comparative/new')}
+          />
+        </View>
+      </View>
+      <View className="flex w-full flex-col items-start justify-center gap-4">
+        <View className="flex w-full flex-row items-center gap-2 border-b border-b-gray-400">
+          <IconHistory size={22} />
+          <Text allowFontScaling={false} style={{ fontSize: fs(18) }} className="font-semiBold">
+            Histórico
+          </Text>
+        </View>
+        <View className="flex w-full flex-col justify-center gap-4">
+          <AnalysisHistoryOption
+            label="Análises Simples"
+            amountAnalysis={2}
+            onPress={() => router.push('analysis/single/history')}
+          />
+          <AnalysisHistoryOption
+            label="Análises Comparativas"
+            amountAnalysis={1}
+            onPress={() => router.push('analysis/comparative/history')}
+          />
+        </View>
       </View>
     </View>
   );

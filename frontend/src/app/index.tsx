@@ -1,5 +1,6 @@
 import { Button } from '@/components/Button';
 import Wellcome from '@/components/Wellcome';
+import { IconArrowRight } from '@tabler/icons-react-native';
 import { router } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -12,7 +13,8 @@ export default function Index() {
       </View>
       <View className="flex h-[15%] w-full justify-center">
         <Button onPress={() => router.navigate('/analysis')}>
-          <Button.Title>Começar</Button.Title>
+          <Button.Icon icon={IconArrowRight} />
+          <Button.Title>COMEÇAR</Button.Title>
         </Button>
       </View>
     </View>

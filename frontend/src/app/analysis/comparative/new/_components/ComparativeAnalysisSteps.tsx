@@ -1,5 +1,5 @@
+import { Step } from '@/components/Step';
 import { View } from 'react-native';
-import { Step } from '../../../../components/Step';
 
 export default function ComparativeAnalysisSteps() {
   return (

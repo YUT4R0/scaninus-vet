@@ -1,4 +1,4 @@
-import { EnnVariables } from './enn-variables';
+import { EnnVariables } from '../../@types/enn-variables';
 
 export type SingleAnalysisAPiResponse = {
   status: 'SUCESSO' | 'IMPRECISA' | 'FALHA';

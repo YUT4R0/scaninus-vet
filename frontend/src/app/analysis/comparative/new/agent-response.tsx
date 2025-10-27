@@ -1,5 +1,5 @@
-import { ComparativeAnalysisAPiResponse } from '@/@types/comparative-analysis-api-response';
 import { baseURL } from '@/api';
+import { ComparativeAnalysisAPiResponse } from '@/api/@types/comparative-analysis-api-response';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
 import { colors } from '@/styles/colors';

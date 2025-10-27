@@ -1,5 +1,5 @@
-import { SingleAnalysisAPiResponse } from '@/@types/single-analysis-api-response';
 import { baseURL } from '@/api';
+import { SingleAnalysisAPiResponse } from '@/api/@types/single-analysis-api-response';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
 import { colors } from '@/styles/colors';
@@ -11,18 +11,40 @@ import {
   IconFaceIdError,
   IconHome2,
   IconRobotFace,
+  IconX,
 } from '@tabler/icons-react-native';
+import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system'; // NOVO IMPORT
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import { SingleAnalysisHistory, useSingleAnalysisStore } from '@/store/single-analysis';
+import { ANALYSIS_HISTORY_LIMIT } from '../..';
 
 export default function AgentResponse() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
-  const [analysisResult, setAnalysisResult] = useState<SingleAnalysisAPiResponse | null>(null); // Estado para o resultado final
+  const [analysisResult, setAnalysisResult] = useState<SingleAnalysisAPiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-
+  const [analysisDate, setAnalysisDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [analysisTitle, setAnalysisTitle] = useState('');
+
+  const addAnalysisToStore = useSingleAnalysisStore((state) => state.addAnalysis);
+  const amountAnalysis = useSingleAnalysisStore((state) => state.singleAnalyses).length;
 
   const handleSend = async (fileUri: string) => {
     setIsLoading(true);
@@ -45,6 +67,7 @@ export default function AgentResponse() {
         },
         timeout: 1000 * 90,
       });
+      setAnalysisDate(new Date());
 
       console.log(`====> RECEIVED DATA: ${data}`);
 
@@ -53,11 +76,6 @@ export default function AgentResponse() {
       console.warn('Erro ao enviar arquivo pra API:', e.message);
       setError('Falha na comunicação ou processamento da API.');
     } finally {
-      try {
-        await FileSystem.deleteAsync(fileUri, { idempotent: true });
-      } catch (e) {
-        console.warn('Erro ao deletar arquivo após envio:', e);
-      }
       setIsLoading(false);
     }
   };
@@ -75,19 +93,92 @@ export default function AgentResponse() {
         },
         {
           text: 'Cancelar análise',
-          onPress: async () => {
-            try {
-              await FileSystem.deleteAsync(uri, { idempotent: true });
-            } catch (e) {
-              console.warn('Erro ao deletar arquivo:', e);
-            } finally {
-              router.replace({ pathname: '/analysis' });
-            }
-          },
+          onPress: handleExit,
         },
       ],
       { cancelable: true }
     );
+  };
+
+  const moveFileToHistoryLocation = async (
+    tempUri: string,
+    analysisId: string
+  ): Promise<string> => {
+    const HISTORY_DIR = FileSystem.documentDirectory + 'single_analysis_history/';
+    const FINAL_URI = HISTORY_DIR + `${analysisId}.jpg`;
+
+    await FileSystem.makeDirectoryAsync(HISTORY_DIR, { intermediates: true });
+
+    await FileSystem.moveAsync({
+      from: tempUri,
+      to: FINAL_URI,
+    });
+
+    return FINAL_URI;
+  };
+
+  const handleSaveAnalysis = async () => {
+    setIsModalVisible(true);
+    setAnalysisTitle(`Análise ${analysisDate.toLocaleDateString()}`);
+  };
+
+  const clearTempFile = async (uriToClear: string) => {
+    try {
+      await FileSystem.deleteAsync(uriToClear, { idempotent: true });
+    } catch (e) {
+      console.warn('Erro ao deletar arquivo:', e);
+    }
+  };
+
+  const handleFinalSaving = async () => {
+    if (
+      !(
+        analysisResult &&
+        analysisResult.status !== 'FALHA' &&
+        analysisResult.enn &&
+        analysisResult.variables
+      )
+    )
+      return;
+    if (analysisTitle.trim().length < 3) {
+      Alert.alert('Erro', 'O nome da análise deve ter pelo menos 3 caracteres.');
+      return;
+    }
+
+    const newAnalysisId = Crypto.randomUUID();
+    const finalImageUri = await moveFileToHistoryLocation(uri, newAnalysisId);
+
+    try {
+      const analysisToSave: SingleAnalysisHistory = {
+        id: newAnalysisId,
+        date: analysisDate.toISOString(),
+        image_uri: finalImageUri,
+        title: analysisTitle.trim(),
+        status: analysisResult.status,
+        enn: analysisResult.enn,
+        description: analysisResult.description,
+        variables: analysisResult.variables,
+        suggestion: analysisResult.suggestion,
+      };
+
+      addAnalysisToStore(analysisToSave);
+      setIsModalVisible(false);
+
+      router.replace({ pathname: '/analysis/single/history' });
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Erro', 'Não foi possível salvar o histórico. Tente novamente.');
+    }
+  };
+
+  const handleExit = async () => {
+    await clearTempFile(uri);
+    router.replace({ pathname: '/analysis' });
+  };
+
+  const handleNewAnalysis = async () => {
+    await clearTempFile(uri);
+    router.replace({ pathname: '/analysis/single/new' });
   };
 
   useEffect(() => {
@@ -95,6 +186,47 @@ export default function AgentResponse() {
       handleSend(uri);
     }
   }, [uri, isLoading]);
+
+  const renderNameModal = () => (
+    <Modal
+      transparent={true}
+      visible={isModalVisible}
+      onRequestClose={() => setIsModalVisible(false)}>
+      <View style={modalStyles.centeredView}>
+        <View style={modalStyles.modalView}>
+          <View className="mb-5 w-full flex-row items-center justify-between">
+            <Text style={modalStyles.modalTitle}>Salvar Análise</Text>
+            <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+              <IconX size={24} color={colors.gray[600]} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={modalStyles.label}>Nome da análise:</Text>
+          <TextInput
+            style={modalStyles.input}
+            onChangeText={setAnalysisTitle}
+            value={analysisTitle}
+            placeholder="Ex: Ração Teste Premium"
+            maxLength={50}
+            keyboardType="default"
+          />
+
+          <View className="mt-8 w-full flex-row justify-between">
+            <Button
+              onPress={() => setIsModalVisible(false)}
+              style={{ backgroundColor: colors.gray[500], width: '45%' }}>
+              <Button.Title>Cancelar</Button.Title>
+            </Button>
+            <Button
+              onPress={handleFinalSaving}
+              style={{ backgroundColor: colors.green.base, width: '45%' }}>
+              <Button.Title>Salvar</Button.Title>
+            </Button>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <View className="flex flex-1 flex-col justify-between gap-4 p-10">
@@ -232,19 +364,25 @@ export default function AgentResponse() {
                 <Button.Icon icon={IconHome2} />
                 <Button.Title>Home</Button.Title>
               </Button>
-              <Button
-                onPress={() => router.replace({ pathname: '/analysis/single/history' })}
-                style={{ backgroundColor: colors.green.light, width: '30%' }}>
-                <Button.Icon icon={IconDeviceFloppy} />
-                <Button.Title>Salvar</Button.Title>
-              </Button>
+              {analysisResult &&
+                analysisResult.status !== 'FALHA' &&
+                analysisResult.enn &&
+                analysisResult.variables &&
+                amountAnalysis < ANALYSIS_HISTORY_LIMIT && (
+                  <Button
+                    onPress={handleSaveAnalysis}
+                    style={{ backgroundColor: colors.green.light, width: '30%' }}>
+                    <Button.Icon icon={IconDeviceFloppy} />
+                    <Button.Title>Salvar</Button.Title>
+                  </Button>
+                )}
             </View>
           )}
         </ScrollView>
         <View className="flex w-full flex-row items-center justify-center gap-6">
           {isLoading ? (
             <Button
-              onPress={() => handleCancel}
+              onPress={handleCancel}
               style={{ backgroundColor: colors.red.base, width: '50%' }}>
               <Button.Icon icon={IconCancel} />
               <Button.Title>Cancelar</Button.Title>
@@ -253,13 +391,13 @@ export default function AgentResponse() {
             !analysisResult && (
               <>
                 <Button
-                  onPress={() => router.replace({ pathname: '/analysis' })}
+                  onPress={handleExit}
                   style={{ backgroundColor: colors.gray[500], width: '46%' }}>
                   <Button.Icon icon={IconHome2} />
                   <Button.Title>Home</Button.Title>
                 </Button>
                 <Button
-                  onPress={() => router.replace({ pathname: '/analysis/single/new' })}
+                  onPress={handleNewAnalysis}
                   style={{ backgroundColor: colors.blue.base, width: '46%' }}>
                   <Button.Icon icon={IconCamera} />
                   <Button.Title>Nova Análise</Button.Title>
@@ -269,6 +407,54 @@ export default function AgentResponse() {
           )}
         </View>
       </View>
+      {renderNameModal()}
     </View>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo escuro
+  },
+  modalView: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: fs(20),
+    fontWeight: 'bold',
+    color: colors.gray[600],
+  },
+  label: {
+    alignSelf: 'flex-start',
+    fontSize: fs(14),
+    fontWeight: '500',
+    marginBottom: 5,
+    color: colors.gray[600],
+  },
+  input: {
+    width: '100%',
+    height: 45,
+    backgroundColor: colors.gray[100],
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: fs(16),
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+  },
+});

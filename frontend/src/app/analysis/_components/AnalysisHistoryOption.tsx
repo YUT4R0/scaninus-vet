@@ -1,12 +1,11 @@
 import { fs } from '@/utils/responsive';
 import { Text, TouchableOpacity, TouchableOpacityProps, View } from 'react-native';
+import { ANALYSIS_HISTORY_LIMIT } from '..';
 
 type AnalysisHistoricOptionProps = {
   label: string;
   amountAnalysis: number;
 } & TouchableOpacityProps;
-
-export const MAX_ANALYSIS = 3;
 
 export default function AnalysisHistoryOption({
   label,
@@ -23,7 +22,7 @@ export default function AnalysisHistoryOption({
       </Text>
       <View className="h-3 w-full rounded-xl bg-gray-400">
         <View
-          style={{ width: `${(amountAnalysis / MAX_ANALYSIS) * 100}%` }}
+          style={{ width: `${(amountAnalysis / ANALYSIS_HISTORY_LIMIT) * 100}%` }}
           className={'h-3 rounded-xl bg-green-500'}
         />
       </View>
@@ -31,7 +30,7 @@ export default function AnalysisHistoryOption({
         allowFontScaling={false}
         style={{ fontSize: fs(10) }}
         className="text-center font-regular">
-        {amountAnalysis}/{MAX_ANALYSIS}
+        {amountAnalysis}/{ANALYSIS_HISTORY_LIMIT}
       </Text>
     </TouchableOpacity>
   );

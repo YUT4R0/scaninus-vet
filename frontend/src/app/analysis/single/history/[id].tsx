@@ -1,12 +1,16 @@
+import { useSingleAnalysisStore } from '@/store/single-analysis';
+import { formatDate } from '@/utils/date-format';
 import { fs } from '@/utils/responsive';
 import { useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { MOCKED_ANALYSES } from '.';
+import { colorMap } from './_components/SingleAnalysisHistoryCard';
 
 export default function AnalysisId() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const analysis = MOCKED_ANALYSES.filter((analysis) => analysis.id === id)[0];
+  const analysis = useSingleAnalysisStore((state) => state.singleAnalyses).filter(
+    (analysis) => analysis.id === id
+  )[0];
 
   return (
     <View className="flex-1 px-10 pb-10">
@@ -27,15 +31,21 @@ export default function AnalysisId() {
               Ração Analisada ({analysis.status.toLowerCase()}):
             </Text>
             <Text allowFontScaling={false} style={{ fontSize: fs(14) }} className="font-regular">
-              {analysis.date}
+              {formatDate(analysis.date)}
             </Text>
           </View>
-          <View
-            style={{ elevation: 3, borderRadius: 12, height: 256, width: 256 }}
-            className="flex items-center self-center">
-            <View
-              style={{ borderRadius: 12, height: 256, width: 256 }}
-              className=" bg-yellow-200"
+          <View style={{ elevation: 6, borderRadius: 12 }} className="self-center ">
+            <Image
+              source={{ uri: analysis.image_uri }}
+              style={{
+                height: 256,
+                width: 256,
+                borderRadius: 12,
+                backgroundColor: '#5d5b5b',
+                borderWidth: 1,
+                borderColor: colorMap[analysis.status],
+              }}
+              resizeMode="contain"
             />
           </View>
         </View>

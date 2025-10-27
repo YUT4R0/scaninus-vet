@@ -1,3 +1,4 @@
+import { useSingleAnalysisStore } from '@/store/single-analysis';
 import { fs } from '@/utils/responsive';
 import {
   IconCirclePlus,
@@ -10,7 +11,11 @@ import { Text, View } from 'react-native';
 import AnalysisHistoryOption from './_components/AnalysisHistoryOption';
 import AnalysisOption from './_components/AnalysisOption';
 
+export const ANALYSIS_HISTORY_LIMIT = 3;
+
 export default function Index() {
+  const singleAnalysisHistory = useSingleAnalysisStore((state) => state.singleAnalyses);
+
   return (
     <View className="w-full flex-1 gap-8 p-10">
       <View className="flex items-start justify-center gap-2">
@@ -56,12 +61,12 @@ export default function Index() {
         <View className="flex w-full flex-col justify-center gap-4">
           <AnalysisHistoryOption
             label="Análises Simples"
-            amountAnalysis={2}
+            amountAnalysis={singleAnalysisHistory.length}
             onPress={() => router.push('analysis/single/history')}
           />
           <AnalysisHistoryOption
             label="Análises Comparativas"
-            amountAnalysis={1}
+            amountAnalysis={0}
             onPress={() => router.push('analysis/comparative/history')}
           />
         </View>

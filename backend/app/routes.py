@@ -15,12 +15,30 @@ def generate_single_analysis():
     Single analysis route
     """
     logger.info("=====> CHEGOU AQUI")
-    file = request.files["image"]
-    if not file:
+
+    # CORREÇÃO CRÍTICA: Verifica se a chave 'image' existe no MultiDict.
+    if "image" not in request.files:
+        logger.error("Chave 'image' não encontrada no request.files")
         return (
-            jsonify({"error": "Nenhuma chave 'image' encontrada no formulário."}),
+            jsonify(
+                {"error": "Nenhuma chave 'image' encontrada no formulário (POST)."}
+            ),
+            400,  # Retorna 400 Bad Request, que é o correto para dados inválidos.
+        )
+
+    # Acessa o arquivo agora que sabemos que a chave existe
+    file = request.files["image"]
+
+    # Validação adicional: Se o arquivo estiver vazio (conteúdo zero ou nome vazio)
+    if not file or file.filename == "":
+        return (
+            jsonify(
+                {"error": "Arquivo 'image' está vazio ou nome de arquivo ausente."}
+            ),
             400,
         )
+
+    # Chama o Controller
     analyzer_controller = AnalyzerController()
     return analyzer_controller.generate_single_analysis(file=file)
 

@@ -22,10 +22,10 @@ class AnalyzerView:
                 raise ValueError("LLM não retornou o JSON no formato esperado.")
             json_string_clean = json_match.group(1).strip()
             response_data_dict = json.loads(json_string_clean)
-            logger.info(f"====> SANITIZED INFO: {response_data_dict}")
+            # logger.info(f"====> SANITIZED INFO: {response_data_dict}")
             return jsonify(response_data_dict), 200
         except json.JSONDecodeError:
-            logger.error("Erro ao fazer parse do JSON retornado pelo modelo.")
+            # logger.error("Erro ao fazer parse do JSON retornado pelo modelo.")
             return (
                 jsonify({"error": "Erro interno: Formato de resposta da IA inválido."}),
                 500,
@@ -43,10 +43,10 @@ class AnalyzerView:
                 raise ValueError("LLM não retornou o JSON no formato esperado.")
             json_string_clean = json_match.group(1).strip()
             response_data_dict = json.loads(json_string_clean)
-            logger.info(f"====> SANITIZED INFO: {response_data_dict}")
+            # logger.info(f"====> SANITIZED INFO: {response_data_dict}")
             return jsonify(response_data_dict), 200
         except json.JSONDecodeError:
-            logger.error("Erro ao fazer parse do JSON retornado pelo modelo.")
+            # logger.error("Erro ao fazer parse do JSON retornado pelo modelo.")
             return (
                 jsonify({"error": "Erro interno: Formato de resposta da IA inválido."}),
                 500,

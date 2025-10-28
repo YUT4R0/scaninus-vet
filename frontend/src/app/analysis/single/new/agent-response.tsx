@@ -1,4 +1,3 @@
-import { baseURL } from '@/api';
 import { SingleAnalysisAPiResponse } from '@/api/@types/single-analysis-api-response';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
@@ -48,21 +47,21 @@ export default function AgentResponse() {
         name: filename,
       } as any);
 
-      console.log(`end point: ${baseURL}/analysis/single`);
+      // console.log(`end point: ${baseURL}`);
 
       const { data } = await api.post<SingleAnalysisAPiResponse>('/analysis/single', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 1000 * 90,
+        timeout: 1000 * 90 + 1000 * 30,
       });
       setAnalysisDate(new Date());
 
-      console.log(`====> RECEIVED DATA: ${data}`);
+      // console.log(`====> RECEIVED DATA: ${data}`);
 
       setAnalysisResult(data);
     } catch (e: any) {
-      console.warn('Erro ao enviar arquivo pra API:', e.message);
+      // console.warn('Erro ao enviar arquivo pra API:', e.message);
       setError('Falha na comunicação ou processamento da API.');
     } finally {
       setIsLoading(false);
@@ -114,7 +113,7 @@ export default function AgentResponse() {
     try {
       await FileSystem.deleteAsync(uriToClear, { idempotent: true });
     } catch (e) {
-      console.warn('Erro ao deletar arquivo:', e);
+      // console.warn('Erro ao deletar arquivo:', e);
     }
   };
 
@@ -154,7 +153,7 @@ export default function AgentResponse() {
 
       router.replace({ pathname: '/analysis/single/history' });
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       Alert.alert('Erro', 'Não foi possível salvar o histórico. Tente novamente.');
     }
   };

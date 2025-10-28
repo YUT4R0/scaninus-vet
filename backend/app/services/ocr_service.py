@@ -1,7 +1,6 @@
 from werkzeug.datastructures import FileStorage
 from flask import current_app
 from app.config import Config
-from app.utils import logger
 import requests
 
 

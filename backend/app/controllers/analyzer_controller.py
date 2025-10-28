@@ -66,12 +66,12 @@ class AnalyzerController:
                 400,
             )
 
-        logger.info(f"====> IMAGEM RECEBIDA: {file.filename}")
+        # logger.info(f"====> IMAGEM RECEBIDA: {file.filename}")
 
         try:
             ocr_service = OCRService()
             raw_text_data = ocr_service.extract_text(file=file)
-            logger.info(f"====> RAW TEXT RETURNED FROM OCR-SERVICE: {raw_text_data}")
+            # logger.info(f"====> RAW TEXT RETURNED FROM OCR-SERVICE: {raw_text_data}")
 
             if not self._is_relevant_text(raw_text_data):
                 logger.warning(
@@ -87,7 +87,7 @@ class AnalyzerController:
 
             agent_service = AgentService()
             response_text = agent_service.get_single_analysis(data=raw_text_data)
-            logger.info(f"====> RESPONSE FROM MODEL: {response_text}")
+            # logger.info(f"====> RESPONSE FROM MODEL: {response_text}")
 
             return self._analyzer_view.sigle_analysis_output(response_text)
         except Exception as e:
@@ -109,7 +109,7 @@ class AnalyzerController:
                 "raw_text": raw_text_data,
             }
         except Exception as e:
-            logger.error(f"Erro no OCR da imagem {file.filename}: {str(e)}")
+            # logger.error(f"Erro no OCR da imagem {file.filename}: {str(e)}")
             return {
                 "success": False,
                 "filename": file.filename,
@@ -158,9 +158,10 @@ class AnalyzerController:
                 if self._is_relevant_text(result["raw_text"]):
                     filtered_successful_data.append(result)
                 else:
-                    logger.warning(
-                        f"Imagem {result['label']} ignorada por ser irrelevante."
-                    )
+                    pass
+                    # logger.warning(
+                    #     f"Imagem {result['label']} ignorada por ser irrelevante."
+                    # )
 
         if not filtered_successful_data or len(filtered_successful_data) < 2:
             response_text = {
@@ -171,7 +172,7 @@ class AnalyzerController:
             }
             return self._analyzer_view.comparative_analysis_output(response_text)
 
-        logger.info(f"=====> DADOS EXTRAIDOS COM SUCESSO\n: {filtered_successful_data}")
+        # logger.info(f"=====> DADOS EXTRAIDOS COM SUCESSO\n: {filtered_successful_data}")
         raw_tupled_data: list[tuple[int, str]] = sorted(
             [(d["label"], d["raw_text"]) for d in filtered_successful_data],
             key=lambda x: x[0],
@@ -182,7 +183,7 @@ class AnalyzerController:
             ocr_results=raw_tupled_data
         )
 
-        logger.info(f"=====> RESULTADO DO GEMINI\n: {response_json_text}")
+        # logger.info(f"=====> RESULTADO DO GEMINI\n: {response_json_text}")
         return self._analyzer_view.comparative_analysis_output(
             response_data=response_json_text
         )

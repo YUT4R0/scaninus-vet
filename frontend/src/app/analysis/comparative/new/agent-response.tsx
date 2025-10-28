@@ -1,4 +1,3 @@
-import { baseURL } from '@/api';
 import { ComparativeAnalysisAPiResponse } from '@/api/@types/comparative-analysis-api-response';
 import { api } from '@/api/axios';
 import { Button } from '@/components/Button';
@@ -41,7 +40,7 @@ export default function AgentResponse() {
         } as any);
       });
 
-      console.log(`endpoint: ${baseURL}/analysis/comparative`);
+      // console.log(`endpoint: ${baseURL}/analysis/comparative`);
 
       setIsLoading(true);
       setSentUris(filesUris);
@@ -52,21 +51,21 @@ export default function AgentResponse() {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-          timeout: 1000 * 90 * filesUris.length,
+          timeout: 1000 * 90 * filesUris.length + 1000 * 30,
         }
       );
 
-      console.log(`====> RECEIVED DATA: ${data}`);
+      // console.log(`====> RECEIVED DATA: ${data}`);
 
       setAnalysisResult(data);
     } catch (e: any) {
-      console.warn('Erro ao enviar arquivo pra API:', e.message);
+      // console.warn('Erro ao enviar arquivo pra API:', e.message);
       setError('Falha na comunicação ou processamento da API.');
     } finally {
       try {
         await Promise.all(filesUris.map((u) => FileSystem.deleteAsync(u, { idempotent: true })));
       } catch (e) {
-        console.warn('Erro ao deletar arquivo após envio:', e);
+        // console.warn('Erro ao deletar arquivo após envio:', e);
       }
       setIsLoading(false);
     }
@@ -95,7 +94,7 @@ export default function AgentResponse() {
     try {
       await Promise.all(urisToClear.map((u) => FileSystem.deleteAsync(u, { idempotent: true })));
     } catch (e) {
-      console.warn('Erro ao deletar arquivo:', e);
+      // console.warn('Erro ao deletar arquivo:', e);
     }
   };
 

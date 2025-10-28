@@ -16,7 +16,11 @@
     },
     "preview": {
       "distribution": "internal",
-      "environment": "preview"
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_DOMAIN": "scaninus-vet-api.onrender.com",
+        "EXPO_PUBLIC_API_PORT": "443"
+      }
     },
     "production": {
       "autoIncrement": true
